@@ -54,6 +54,7 @@ Client event UI + API integration
 Offline caching (service worker)
 Offline queue + sync strategy
 Testing + polish + deployment
+
 ## Repo Structure
 - `/client` Frontend PWA
 - `/server` Backend API (Node/Express)
