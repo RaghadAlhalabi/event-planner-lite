@@ -12,7 +12,32 @@ Event Planner Lite is a full-stack Progressive Web Application (PWA) where users
 - REST-ish API: CRUD for events + sharing + RSVP
 
 ## Feature Map
-See: `docs/feature-map.md`
+
+## Authentication
+- Register
+- Login
+- Logout
+- Protected routes
+
+## Events (CRUD)
+- Create event
+- List my events
+- View event
+- Edit event
+- Delete event
+
+## Sharing + RSVP
+- Invite user to event
+- View events shared with me
+- RSVP: Yes / No / Maybe
+- Host can view RSVP list
+
+## PWA + Offline
+- Installable app (manifest)
+- Service worker caches app shell
+- Offline view of previously loaded events
+- Offline queue + sync when online
+
 
 ## Plan / Work Items
 See: `docs/plan.md`
