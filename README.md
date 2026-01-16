@@ -39,9 +39,21 @@ Event Planner Lite is a full-stack Progressive Web Application (PWA) where users
 - Offline queue + sync when online
 
 
-## Plan / Work Items
-See: `docs/plan.md`
-
+## Plan
+Project management tool
+GitHub Projects (Backlog → In Progress → Done)
+Work items (initial)
+Scaffold server (Express) + health route
+PostgreSQL connection + migrations
+Auth endpoints + JWT
+Event CRUD endpoints
+Sharing + RSVP endpoints
+Client scaffold (PWA)
+Client auth flow
+Client event UI + API integration
+Offline caching (service worker)
+Offline queue + sync strategy
+Testing + polish + deployment
 ## Repo Structure
 - `/client` Frontend PWA
 - `/server` Backend API (Node/Express)
