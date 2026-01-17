@@ -72,5 +72,8 @@ Event Planner Lite is a full-stack Progressive Web Application (PWA) that allows
 
 ---
 
-## Status
-This repository contains the project kickoff documentation and working scaffolding for the backend and cloud database. The final implementation will follow the documented feature map and plan.
+## Project Management
+
+Project planning and task tracking are handled using a GitHub Project board:
+https://github.com/users/RaghadAlhalabi/projects/1
+
