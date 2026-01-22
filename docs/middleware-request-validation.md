@@ -1,70 +1,67 @@
-# Middleware: Request Validation (Express)
+# Request validation middleware (Express)
 
-## The need / problem it solves
-Event Planner Lite will accept many kinds of user input:
+## Why this is needed
+This API accepts a lot of user input (events, invitations, RSVP, and later also offline-sync actions). If validation is done inside every route, the same checks get repeated and error responses become inconsistent.
 
-- Sign up / log in data
-- Creating and updating events (title, date/time, location, notes)
-- Invitations (email/username)
-- RSVPs (Yes/No/Maybe + optional note)
-- Offline queued actions that are replayed later
+This middleware solves that by validating the request *before* the handler runs.
 
-Without a shared validation layer, each route/controller ends up doing its own checks (or worse: trusting input). That creates several problems:
+Goals:
+- Same error response format every time
+- No duplicated “is this missing / wrong type?” checks inside controllers
+- Routes stay clean (business logic only)
 
-- **Inconsistent errors**: one endpoint returns `400`, another returns `500`, another returns a different JSON shape. This is annoying for the PWA client (especially offline sync) because it needs predictable error handling.
-- **Duplicated code**: every controller re-implements “is this field present?” and “is this a valid date?”
-- **Harder security and robustness**: unexpected types (e.g., `date: {}` or `title: []`) can lead to bugs, crashes, or bad DB writes.
-- **Messy controllers**: business logic gets mixed with validation details.
+## What it does (in this repo)
+This repo includes a small middleware factory:
 
-## Why middleware is the right solution
-Validation is a **cross-cutting concern**: it applies to many endpoints in the same way and must happen *before* the controller logic runs.
+`validateRequest({ body, query, params })`
 
-An Express middleware can:
+It uses Zod schemas to validate:
+- `req.body`
+- `req.query`
+- `req.params`
 
-- Validate `req.body`, `req.query`, and/or `req.params` *once, consistently*
-- Stop invalid requests early with a clear `400` response
-- Keep controllers focused on business logic
+If everything is valid, it replaces `req.body`/`req.query`/`req.params` with the parsed values and calls `next()`.
 
-## What the middleware will do
-Create a reusable middleware factory:
+If validation fails, it returns `400` with a consistent JSON shape.
 
-- `validateRequest({ body, query, params })`
-- Uses schemas to validate input
-- On success: optionally replaces `req.body/req.query/req.params` with the validated/sanitized values
-- On failure: responds with `400` and a predictable error format (no server crash)
-
-## Where it lives in this repo
+## Files / where it is used
 - Middleware: `server/src/middleware/validateRequest.mjs`
-- Example route using it: `server/src/routes/events.mjs` (mounted at `/api/events`)
+- Used in: `server/src/routes/events.mjs`
+- Mounted in: `server/src/app.mjs` at `/api/events`
 
 ## Error response format
-If validation fails, the middleware responds with HTTP `400`:
+Example for an invalid request:
 
 ```json
 {
-	"error": "ValidationError",
-	"message": "Invalid request",
-	"details": [
-		{ "path": "title", "message": "Required", "code": "invalid_type" }
-	]
+  "error": "ValidationError",
+  "message": "Invalid request",
+  "details": [
+    { "path": "title", "message": "Required", "code": "invalid_type" }
+  ]
 }
 ```
 
-`details[].path` uses dot notation (example: `user.email`).
+Notes:
+- `details[].path` uses dot notation (example: `user.email`).
 
 ## Example usage
-In a route:
 
 ```js
 router.post(
-	"/",
-	validateRequest({ body: createEventBodySchema }),
-	(req, res) => res.status(201).json({ event: req.body })
+  "/",
+  validateRequest({ body: createEventBodySchema }),
+  (req, res) => res.status(201).json({ event: req.body })
 );
 ```
 
-## Success criteria
-- A new middleware exists under `server/src/middleware/`
-- At least one API route actively uses the middleware
-- Invalid requests return `400` with helpful validation details
-- Valid requests reach the handler with validated data
+## Quick manual test
+Start server and send a bad request:
+
+```bash
+cd server
+npm run dev
+curl -X POST http://localhost:3000/api/events -H "Content-Type: application/json" -d "{}"
+```
+
+You should get `400` + validation details.

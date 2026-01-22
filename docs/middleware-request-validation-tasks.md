@@ -1,31 +1,31 @@
-# Tasks: Request validation middleware
+# Tasks: request validation middleware
 
-Use this as the checklist to add cards/issues to the GitHub Project board.
+This checklist is used for the middleware assignment. It also matches the cards on the GitHub Project board.
 
-## Analysis & design
-- [ ] Decide validation library (recommended: `zod`)
-- [ ] Define standard error response shape for invalid requests
-- [ ] Pick at least one endpoint to demonstrate usage (e.g. `POST /api/events`)
+## 1) Decide + design
+- [x] Pick validation library (Zod)
+- [x] Decide a standard error response shape
+- [x] Pick a route to prove it works (`POST /api/events`)
 
-## Implementation
-- [ ] Create `validateRequest({ body, query, params })` middleware factory
-- [ ] Support validating/sanitizing (replace `req.body`, etc. with parsed values)
-- [ ] Ensure the middleware returns `400` for validation errors (not `500`)
+## 2) Implement middleware
+- [x] Create `validateRequest({ body, query, params })`
+- [x] Validate + parse request data (replace `req.body`/`req.query`/`req.params`)
+- [x] Return `400` for validation errors (not `500`)
 
-## Integration
-- [ ] Add an example router under `server/src/routes/` that uses the middleware
-- [ ] Wire router into `server/src/app.mjs`
+## 3) Integrate
+- [x] Add a route that uses the middleware (`server/src/routes/events.mjs`)
+- [x] Mount the router in `server/src/app.mjs` (`/api/events`)
 
-## Testing
-- [ ] Set up `node --test` runner for the server
-- [ ] Add request tests for invalid/valid payloads (recommended: `supertest`)
+## 4) Test
+- [x] Use Node's test runner (`node --test`)
+- [x] Add request tests with `supertest` (invalid body => 400, valid body => handler runs)
 
-## Documentation
-- [ ] Document middleware usage with a copy/paste snippet
-- [ ] Document configuration and response format
-- [ ] Link docs from the main README
+## 5) Document
+- [x] Write the middleware doc with example usage + error response
+- [x] Link docs from README
+- [x] Keep Git workflow steps documented
 
-## Definition of done
+## Done means
 - Middleware is used by at least one route in the running server
 - Invalid requests return `400` with field-level details
-- Tests cover at least: missing required field, wrong type, and valid request
+- Tests cover invalid + valid requests
