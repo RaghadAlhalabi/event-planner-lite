@@ -1,83 +1,62 @@
-# Git + project management workflow (middleware assignment)
+# Git workflow notes (middleware assignment)
 
-This document shows a clean workflow for delivering the middleware with good practice:
-- feature branch
-- small, meaningful commits
-- PR back to `main`
-- tasks/cards on your GitHub Project board
+This is the git flow for the middleware assignment. The goal is a readable history: feature branch, small commits, PR, merge.
 
-## 1) Create tasks in the GitHub Project board
-Use the checklist in `docs/middleware-request-validation-tasks.md`.
+## Project board
+Cards can be created in the GitHub Project board based on the checklist in `docs/middleware-request-validation-tasks.md`.
 
-Recommended cards (copy/paste titles):
-- Middleware need + design doc
-- Add validation middleware (validateRequest)
-- Add /api/events route using middleware
-- Add tests for middleware
-- Update README/docs and link
+## Branch
+From repo root:
 
-## 2) Create a feature branch
-From the repo root:
-
-```powershell
+```bash
 git checkout -b feature/request-validation-middleware
 ```
 
-## 3) Commit in small steps (atomic commits)
-Your working tree currently includes docs + middleware + route + tests + dependencies.
-Here’s a good commit sequence.
+## Commit style
+Keep commits small and focused (one idea per commit).
 
-### Commit A: Documentation of need
-```gitbash
-git add README.md docs/middleware-request-validation.md docs/middleware-request-validation-tasks.md
-git commit -m "docs: describe request validation middleware"
-```
-
-### Commit B: Middleware implementation
-```gitbash
+### Commit 1: middleware
+```bash
 git add server/src/middleware/validateRequest.mjs
 git commit -m "feat: add validateRequest middleware"
 ```
 
-### Commit C: Route integration (uses the middleware)
-```gitbash
+### Commit 2: route integration
+```bash
 git add server/src/routes/events.mjs server/src/app.mjs
 git commit -m "feat: add events route using request validation"
 ```
 
-### Commit D: Tests + test tooling
-```gitbash
-git add server/test/validateRequest.test.mjs server/package.json server/package-lock.json
+### Commit 3: tests + dependencies
+```bash
+git add server/test/ server/package.json server/package-lock.json
 git commit -m "test: add validateRequest request tests"
 ```
 
-## 4) Push and open a PR
-```gitbash
+## Tests
+Run from `server/`:
+
+```bash
+cd server
+npm test
+```
+
+If PowerShell blocks `npm` (execution policy), Git Bash works fine, or you can use `npm.cmd` in PowerShell.
+
+## Push + PR
+```bash
 git push -u origin feature/request-validation-middleware
 ```
 
-Then open a PR on GitHub:
-- base: `main`
-- compare: `feature/request-validation-middleware`
+Then open a PR to `main` and merge it.
 
-In the PR description:
-- link the GitHub Project card(s)
-- include quick manual test commands
-
-## 5) Manual verification commands
-If gitbash blocks `npm` scripts on your machine, use `npm.cmd`.
-
-```gitbash
+## Quick manual check
+```bash
 cd server
-npm.cmd test
-npm.cmd run dev
-```
-
-Example request:
-```gitbash
+npm run dev
 curl -X POST http://localhost:3000/api/events -H "Content-Type: application/json" -d "{}"
 ```
 
-## 6) Merge
-After review, squash merge or merge commit are both fine.
-If your course prefers clean history, use squash merge.
+Expected: `400` with a JSON validation error.
+
+

@@ -12,7 +12,7 @@
 - **Database & API**
   - PostgreSQL schema for users, events, invitations, RSVPs
   - REST-ish endpoints under `/api/*`
-  - Validation with helpful error responses
+  - Request validation middleware (Zod) with helpful error responses
   - API and DB health checks
 
 ## Collaboration Features (Medium Priority)
