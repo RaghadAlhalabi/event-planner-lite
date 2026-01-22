@@ -17,6 +17,10 @@ Event Planner Lite is a full-stack PWA for planning events, inviting attendees, 
 
 Full feature breakdown: [docs/feature-map.md](docs/feature-map.md)
 
+## Middleware (assignment)
+- Request validation need + design: [docs/middleware-request-validation.md](docs/middleware-request-validation.md)
+- Git + project workflow steps: [docs/git-workflow-middleware.md](docs/git-workflow-middleware.md)
+
 ## Project Plan
 - Columns: Todo → In Progress → Testing → Done
 - Priority field: High / Medium / Low
