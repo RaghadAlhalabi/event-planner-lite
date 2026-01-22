@@ -3,12 +3,15 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import pool from "./db/pool.mjs";
+import eventsRouter from "./routes/events.mjs";
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.use("/api/events", eventsRouter);
 
 // Basic API health
 app.get("/api/health", (req, res) => {
