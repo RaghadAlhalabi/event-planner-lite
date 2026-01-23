@@ -1,0 +1,161 @@
+{
+  "info": {
+    "name": "Event Planner Lite API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    }
+  ],
+  "item": [
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "List events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"]
+            }
+          }
+        },
+        {
+          "name": "Create event",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Project kickoff\",\n  \"startsAt\": \"2026-01-26T10:00:00Z\",\n  \"endsAt\": \"2026-01-26T11:00:00Z\",\n  \"location\": \"Room B\",\n  \"notes\": \"Bring slides\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"]
+            }
+          }
+        },
+        {
+          "name": "Get event",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/:eventId",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", ":eventId"]
+            }
+          }
+        },
+        {
+          "name": "Update event",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Project kickoff (updated)\",\n  \"startsAt\": \"2026-01-26T10:00:00Z\",\n  \"endsAt\": \"2026-01-26T11:30:00Z\",\n  \"location\": \"Room B\",\n  \"notes\": \"Bring slides\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/:eventId",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", ":eventId"]
+            }
+          }
+        },
+        {
+          "name": "Delete event",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/:eventId",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", ":eventId"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invitations",
+      "item": [
+        {
+          "name": "List invitations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/:eventId/invitations",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", ":eventId", "invitations"]
+            }
+          }
+        },
+        {
+          "name": "Create invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"guest@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/:eventId/invitations",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", ":eventId", "invitations"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "RSVPs",
+      "item": [
+        {
+          "name": "List RSVPs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/:eventId/rsvps",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", ":eventId", "rsvps"]
+            }
+          }
+        },
+        {
+          "name": "Create/update RSVP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"yes\",\n  \"note\": \"See you there\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/:eventId/rsvps/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", ":eventId", "rsvps", ":userId"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
