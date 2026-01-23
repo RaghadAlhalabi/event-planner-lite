@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 
 import pool from "./db/pool.mjs";
 import eventsRouter from "./routes/events.mjs";
+import invitationsRouter from "./routes/invitations.mjs";
+import rsvpsRouter from "./routes/rsvps.mjs";
 
 dotenv.config();
 
@@ -12,6 +14,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/events", eventsRouter);
+app.use("/api/events/:eventId/invitations", invitationsRouter);
+app.use("/api/events/:eventId/rsvps", rsvpsRouter);
 
 // Basic API health
 app.get("/api/health", (req, res) => {

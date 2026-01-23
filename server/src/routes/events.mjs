@@ -5,6 +5,12 @@ import { validateRequest } from "../middleware/validateRequest.mjs";
 
 const router = Router();
 
+const eventParamsSchema = z
+  .object({
+    eventId: z.string().min(1),
+  })
+  .strict();
+
 const createEventBodySchema = z
   .object({
     title: z.string().min(1),
@@ -15,6 +21,13 @@ const createEventBodySchema = z
   })
   .strict();
 
+router.get("/", (req, res) => {
+  res.json({
+    status: "todo",
+    items: [],
+  });
+});
+
 router.post(
   "/",
   validateRequest({ body: createEventBodySchema }),
@@ -24,6 +37,40 @@ router.post(
     res.status(201).json({
       status: "created",
       event: req.body,
+    });
+  }
+);
+
+router.get(
+  "/:eventId",
+  validateRequest({ params: eventParamsSchema }),
+  (req, res) => {
+    res.json({
+      status: "todo",
+      eventId: req.params.eventId,
+    });
+  }
+);
+
+router.put(
+  "/:eventId",
+  validateRequest({ params: eventParamsSchema, body: createEventBodySchema }),
+  (req, res) => {
+    res.json({
+      status: "updated",
+      eventId: req.params.eventId,
+      event: req.body,
+    });
+  }
+);
+
+router.delete(
+  "/:eventId",
+  validateRequest({ params: eventParamsSchema }),
+  (req, res) => {
+    res.json({
+      status: "deleted",
+      eventId: req.params.eventId,
     });
   }
 );
