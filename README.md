@@ -21,6 +21,10 @@ Full feature breakdown: [docs/feature-map.md](docs/feature-map.md)
 - Request validation need + design: [docs/middleware-request-validation.md](docs/middleware-request-validation.md)
 - Git + project workflow steps: [docs/git-workflow-middleware.md](docs/git-workflow-middleware.md)
 
+## API (assignment)
+- API design doc: [docs/api-design.md](docs/api-design.md)
+- Postman collection: [postman/event-planner-lite.postman_collection.json](postman/event-planner-lite.postman_collection.json)
+
 ## Project Plan
 - Columns: Todo → In Progress → Testing → Done
 - Priority field: High / Medium / Low

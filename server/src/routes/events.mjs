@@ -32,8 +32,7 @@ router.post(
   "/",
   validateRequest({ body: createEventBodySchema }),
   async (req, res) => {
-    // Placeholder handler: demonstrates that the middleware validates input.
-    // Later, this is where you would write to PostgreSQL.
+      // Later, this is where PostgreSQL writes would go.
     res.status(201).json({
       status: "created",
       event: req.body,

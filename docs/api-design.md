@@ -111,7 +111,7 @@ Base URL: `/api`
       "id": "rsvp_123",
       "userId": "usr_123",
       "status": "yes",
-      "note": "See you there"
+      "note": "See there"
     }
   ]
 }
@@ -121,7 +121,7 @@ Base URL: `/api`
 - **POST** `/events/:eventId/rsvps/:userId`
 - **Body**
 ```json
-{ "status": "yes", "note": "See you there" }
+{ "status": "yes", "note": "See there" }
 ```
 - **200 Response**
 ```json
@@ -141,7 +141,3 @@ Base URL: `/api`
   ]
 }
 ```
-
-## Notes
-- Authentication endpoints are intentionally excluded for this assignment.
-- The middleware `validateRequest` handles request validation in the scaffolded routes.
