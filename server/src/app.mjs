@@ -2,10 +2,11 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 
-import pool from "./db/pool.mjs";
+import pool, { hasDatabase } from "./db/pool.mjs";
 import eventsRouter from "./routes/events.mjs";
 import invitationsRouter from "./routes/invitations.mjs";
 import rsvpsRouter from "./routes/rsvps.mjs";
+import usersRouter from "./routes/users.mjs";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use("/api/events", eventsRouter);
 app.use("/api/events/:eventId/invitations", invitationsRouter);
 app.use("/api/events/:eventId/rsvps", rsvpsRouter);
+app.use("/api/users", usersRouter);
 
 // Basic API health
 app.get("/api/health", (req, res) => {
@@ -28,6 +30,13 @@ app.get("/api/health", (req, res) => {
 
 // DB health
 app.get("/api/health/db", async (req, res) => {
+  if (!hasDatabase || !pool) {
+    return res.status(503).json({
+      status: "unavailable",
+      message: "Database not configured",
+    });
+  }
+
   try {
     const result = await pool.query("SELECT NOW() AS now");
     res.json({ status: "ok", dbTime: result.rows[0].now });

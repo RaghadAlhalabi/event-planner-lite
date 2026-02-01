@@ -4,6 +4,45 @@ Goal: scaffold a REST-ish API specific to Event Planner Lite (no user/auth endpo
 
 Base URL: `/api`
 
+## Users
+
+### Create user
+- **POST** `/users`
+- **Body**
+```json
+{
+  "email": "user@example.com",
+  "displayName": "Sam",
+  "tosConsentAt": "2026-01-31T10:00:00Z",
+  "privacyConsentAt": "2026-01-31T10:00:00Z"
+}
+```
+- **201 Response**
+```json
+{ "id": "usr_123" }
+```
+
+### Get user
+- **GET** `/users/:userId`
+- **200 Response**
+```json
+{
+  "id": "usr_123",
+  "email": "user@example.com",
+  "displayName": "Sam",
+  "tosConsentAt": "2026-01-31T10:00:00Z",
+  "privacyConsentAt": "2026-01-31T10:00:00Z",
+  "createdAt": "2026-01-31T10:00:00Z"
+}
+```
+
+### Delete user
+- **DELETE** `/users/:userId`
+- **200 Response**
+```json
+{ "status": "deleted", "userId": "usr_123", "publicContributionsRetained": true }
+```
+
 ## Events
 
 ### List events
@@ -111,7 +150,7 @@ Base URL: `/api`
       "id": "rsvp_123",
       "userId": "usr_123",
       "status": "yes",
-      "note": "See there"
+      "note": "See you there"
     }
   ]
 }
@@ -121,7 +160,7 @@ Base URL: `/api`
 - **POST** `/events/:eventId/rsvps/:userId`
 - **Body**
 ```json
-{ "status": "yes", "note": "See there" }
+{ "status": "yes", "note": "See you there" }
 ```
 - **200 Response**
 ```json
