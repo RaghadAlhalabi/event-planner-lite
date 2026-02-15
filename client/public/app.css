@@ -1,0 +1,88 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, sans-serif;
+  color: #2b1b3f;
+  background: #fff0f7;
+}
+
+#app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  display: grid;
+  gap: 1.75rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2.2rem;
+}
+
+.status {
+  min-height: 1.2rem;
+  font-weight: 600;
+}
+
+.status[data-type="error"] {
+  color: #e11d48;
+}
+
+.status[data-type="success"] {
+  color: #7c3aed;
+}
+
+.panel {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 12px 30px rgba(109, 40, 217, 0.12);
+}
+
+.panel h2 {
+  margin-top: 0;
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+}
+
+label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+input[type="text"],
+input[type="email"] {
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid #e9d5ff;
+  font-size: 1rem;
+}
+
+button {
+  border: none;
+  background: #d946ef;
+  color: #ffffff;
+  padding: 0.7rem 1.2rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 12px 24px rgba(217, 70, 239, 0.28);
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button.danger {
+  background: #f43f5e;
+  box-shadow: 0 10px 20px rgba(244, 63, 94, 0.25);
+}

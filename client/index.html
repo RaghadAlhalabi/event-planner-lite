@@ -2,13 +2,76 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <link rel="manifest" href="/manifest.webmanifest">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
+    <title>Event Planner Lite</title>
+    <link rel="stylesheet" href="./app.css" />
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
+    <main id="app">
+      <h1>Event Planner Lite</h1>
+      <p>Loading...</p>
+    </main>
+    <template id="app-shell">
+      <h1>Event Planner Lite</h1>
+      <p class="status" data-type="info"></p>
+      <user-create></user-create>
+      <user-edit></user-edit>
+      <user-delete></user-delete>
+    </template>
+    <template id="user-create">
+      <section class="panel">
+        <h2>Create user</h2>
+        <form class="form">
+          <label>
+            Email
+            <input type="email" name="email" required />
+          </label>
+          <label>
+            Display name
+            <input type="text" name="displayName" required />
+          </label>
+          <label>
+            <input type="checkbox" name="tosConsent" required />
+            I agree to the Terms of Service
+          </label>
+          <label>
+            <input type="checkbox" name="privacyConsent" required />
+            I agree to the Privacy Policy
+          </label>
+          <button type="submit">Create</button>
+        </form>
+      </section>
+    </template>
+    <template id="user-edit">
+      <section class="panel">
+        <h2>Edit user</h2>
+        <form class="form">
+          <label>
+            User ID
+            <input type="text" name="id" required />
+          </label>
+          <label>
+            Email
+            <input type="email" name="email" required />
+          </label>
+          <label>
+            Display name
+            <input type="text" name="displayName" required />
+          </label>
+          <button type="submit">Update</button>
+        </form>
+      </section>
+    </template>
+    <template id="user-delete">
+      <section class="panel">
+        <h2>Delete user</h2>
+        <label>
+          User ID
+          <input type="text" name="id" required />
+        </label>
+        <button type="button" class="danger">Delete</button>
+      </section>
+    </template>
+    <script type="module" src="./app.mjs"></script>
   </body>
 </html>

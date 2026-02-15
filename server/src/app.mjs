@@ -1,9 +1,9 @@
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
 
-import pool, { hasDatabase } from "./db/pool.mjs";
+import { applyMiddleware } from "./config/middleware.mjs";
 import eventsRouter from "./routes/events.mjs";
+import healthRouter from "./routes/health.mjs";
 import invitationsRouter from "./routes/invitations.mjs";
 import rsvpsRouter from "./routes/rsvps.mjs";
 import usersRouter from "./routes/users.mjs";
@@ -11,39 +11,13 @@ import usersRouter from "./routes/users.mjs";
 dotenv.config();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+applyMiddleware(app);
 
 app.use("/api/events", eventsRouter);
 app.use("/api/events/:eventId/invitations", invitationsRouter);
 app.use("/api/events/:eventId/rsvps", rsvpsRouter);
 app.use("/api/users", usersRouter);
-
-// Basic API health
-app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
-    name: "Event Planner Lite API",
-    time: new Date().toISOString(),
-  });
-});
-
-// DB health
-app.get("/api/health/db", async (req, res) => {
-  if (!hasDatabase || !pool) {
-    return res.status(503).json({
-      status: "unavailable",
-      message: "Database not configured",
-    });
-  }
-
-  try {
-    const result = await pool.query("SELECT NOW() AS now");
-    res.json({ status: "ok", dbTime: result.rows[0].now });
-  } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
-  }
-});
+app.use("/api/health", healthRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
