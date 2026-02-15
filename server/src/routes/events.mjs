@@ -32,7 +32,7 @@ router.post(
   "/",
   validateRequest({ body: createEventBodySchema }),
   async (req, res) => {
-      // Later, this is where PostgreSQL writes would go.
+    // Later, this is where i would write to PostgreSQL.
     res.status(201).json({
       status: "created",
       event: req.body,

@@ -2,8 +2,6 @@
 
 This is the git flow for the middleware assignment. The goal is a readable history: feature branch, small commits, PR, merge.
 
-## Project board
-Cards can be created in the GitHub Project board based on the checklist in `docs/middleware-request-validation-tasks.md`.
 
 ## Branch
 From repo root:
@@ -41,7 +39,6 @@ cd server
 npm test
 ```
 
-If PowerShell blocks `npm` (execution policy), Git Bash works fine, or you can use `npm.cmd` in PowerShell.
 
 ## Push + PR
 ```bash

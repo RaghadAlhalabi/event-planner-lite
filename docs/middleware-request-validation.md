@@ -63,5 +63,3 @@ cd server
 npm run dev
 curl -X POST http://localhost:3000/api/events -H "Content-Type: application/json" -d "{}"
 ```
-
-Expected result: `400` + validation details.
