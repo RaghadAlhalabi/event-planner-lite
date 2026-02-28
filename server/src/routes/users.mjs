@@ -1,32 +1,19 @@
 import { Router } from "express";
-import { z } from "zod";
 import { randomUUID } from "crypto";
 
 import { validateRequest } from "../middleware/validateRequest.mjs";
+import {
+  validateCreateUserBody,
+  validateUserIdParams,
+} from "../validators/users.mjs";
 
 const router = Router();
 
 const users = new Map();
 
-const userIdParamsSchema = z
-  .object({
-    userId: z.string().min(1),
-  })
-  .strict();
-
-const createUserBodySchema = z
-  .object({
-    email: z.string().email(),
-    displayName: z.string().min(1),
-    tosConsentAt: z.string().datetime(),
-    privacyConsentAt: z.string().datetime(),
-    timezone: z.string().min(1).optional(),
-  })
-  .strict();
-
 router.post(
   "/",
-  validateRequest({ body: createUserBodySchema }),
+  validateRequest({ body: validateCreateUserBody }),
   (req, res) => {
     const id = `usr_${randomUUID()}`;
     const now = new Date().toISOString();
@@ -49,7 +36,7 @@ router.post(
 
 router.get(
   "/:userId",
-  validateRequest({ params: userIdParamsSchema }),
+  validateRequest({ params: validateUserIdParams }),
   (req, res) => {
     const user = users.get(req.params.userId);
     if (!user) {
@@ -65,7 +52,7 @@ router.get(
 
 router.delete(
   "/:userId",
-  validateRequest({ params: userIdParamsSchema }),
+  validateRequest({ params: validateUserIdParams }),
   (req, res) => {
     const user = users.get(req.params.userId);
     if (!user) {

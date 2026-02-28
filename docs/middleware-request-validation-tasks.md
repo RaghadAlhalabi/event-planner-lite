@@ -3,7 +3,7 @@
 This checklist is used for the middleware assignment. It also matches the cards on the GitHub Project board.
 
 ## 1) Decide + design
-- [x] Pick validation library (Zod)
+- [x] Implement custom validation (no third-party library)
 - [x] Decide a standard error response shape
 - [x] Pick a route to prove it works (`POST /api/events`)
 

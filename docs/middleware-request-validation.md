@@ -15,18 +15,19 @@ This repo includes a small middleware factory:
 
 `validateRequest({ body, query, params })`
 
-It uses Zod schemas to validate:
+It uses custom validator functions to validate:
 - `req.body`
 - `req.query`
 - `req.params`
 
-If everything is valid, it replaces `req.body`/`req.query`/`req.params` with the parsed values and calls `next()`.
+If everything is valid, it replaces `req.body`/`req.query`/`req.params` with the validated values and calls `next()`.
 
 If validation fails, it returns `400` with a consistent JSON shape.
 
 ## Files / where it is used
 - Middleware: `server/src/middleware/validateRequest.mjs`
 - Used in: `server/src/routes/events.mjs`
+- Validators live in: `server/src/validators/*.mjs`
 - Mounted in: `server/src/app.mjs` at `/api/events`
 
 ## Error response format
@@ -50,7 +51,7 @@ Notes:
 ```js
 router.post(
   "/",
-  validateRequest({ body: createEventBodySchema }),
+  validateRequest({ body: validateCreateEventBody }),
   (req, res) => res.status(201).json({ event: req.body })
 );
 ```

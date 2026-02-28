@@ -1,0 +1,44 @@
+import {
+  ensurePlainObject,
+  hasOnlyKeys,
+  optionalString,
+  requireDateTime,
+  requireEmail,
+  requireString,
+} from "./validationUtils.mjs";
+
+export function validateUserIdParams(params) {
+  const errors = [];
+
+  if (ensurePlainObject(params, errors)) {
+    hasOnlyKeys(params, ["userId"], errors);
+    requireString(params, "userId", errors, { min: 1 });
+  }
+
+  return { value: params, errors };
+}
+
+export function validateCreateUserBody(body) {
+  const errors = [];
+
+  if (ensurePlainObject(body, errors)) {
+    hasOnlyKeys(
+      body,
+      [
+        "email",
+        "displayName",
+        "tosConsentAt",
+        "privacyConsentAt",
+        "timezone",
+      ],
+      errors
+    );
+    requireEmail(body, "email", errors);
+    requireString(body, "displayName", errors, { min: 1 });
+    requireDateTime(body, "tosConsentAt", errors);
+    requireDateTime(body, "privacyConsentAt", errors);
+    optionalString(body, "timezone", errors, { min: 1 });
+  }
+
+  return { value: body, errors };
+}

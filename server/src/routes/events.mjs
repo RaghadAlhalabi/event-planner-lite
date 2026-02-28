@@ -1,25 +1,12 @@
 import { Router } from "express";
-import { z } from "zod";
 
 import { validateRequest } from "../middleware/validateRequest.mjs";
+import {
+  validateCreateEventBody,
+  validateEventParams,
+} from "../validators/events.mjs";
 
 const router = Router();
-
-const eventParamsSchema = z
-  .object({
-    eventId: z.string().min(1),
-  })
-  .strict();
-
-const createEventBodySchema = z
-  .object({
-    title: z.string().min(1),
-    startsAt: z.string().datetime(),
-    endsAt: z.string().datetime().optional(),
-    location: z.string().min(1).optional(),
-    notes: z.string().optional(),
-  })
-  .strict();
 
 router.get("/", (req, res) => {
   res.json({
@@ -30,7 +17,7 @@ router.get("/", (req, res) => {
 
 router.post(
   "/",
-  validateRequest({ body: createEventBodySchema }),
+  validateRequest({ body: validateCreateEventBody }),
   async (req, res) => {
     // Later, this is where i would write to PostgreSQL.
     res.status(201).json({
@@ -42,7 +29,7 @@ router.post(
 
 router.get(
   "/:eventId",
-  validateRequest({ params: eventParamsSchema }),
+  validateRequest({ params: validateEventParams }),
   (req, res) => {
     res.json({
       status: "todo",
@@ -53,7 +40,7 @@ router.get(
 
 router.put(
   "/:eventId",
-  validateRequest({ params: eventParamsSchema, body: createEventBodySchema }),
+  validateRequest({ params: validateEventParams, body: validateCreateEventBody }),
   (req, res) => {
     res.json({
       status: "updated",
@@ -65,7 +52,7 @@ router.put(
 
 router.delete(
   "/:eventId",
-  validateRequest({ params: eventParamsSchema }),
+  validateRequest({ params: validateEventParams }),
   (req, res) => {
     res.json({
       status: "deleted",

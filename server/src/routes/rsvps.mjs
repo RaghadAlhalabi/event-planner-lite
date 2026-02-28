@@ -1,31 +1,15 @@
 import { Router } from "express";
-import { z } from "zod";
 
 import { validateRequest } from "../middleware/validateRequest.mjs";
+import {
+  validateEventParams,
+  validateEventUserParams,
+  validateRsvpBody,
+} from "../validators/rsvps.mjs";
 
 const router = Router({ mergeParams: true });
 
-const eventParamsSchema = z
-  .object({
-    eventId: z.string().min(1),
-  })
-  .strict();
-
-const eventUserParamsSchema = z
-  .object({
-    eventId: z.string().min(1),
-    userId: z.string().min(1),
-  })
-  .strict();
-
-const rsvpBodySchema = z
-  .object({
-    status: z.enum(["yes", "no", "maybe"]),
-    note: z.string().optional(),
-  })
-  .strict();
-
-router.get("/", validateRequest({ params: eventParamsSchema }), (req, res) => {
+router.get("/", validateRequest({ params: validateEventParams }), (req, res) => {
   res.json({
     status: "todo",
     eventId: req.params.eventId,
@@ -35,7 +19,10 @@ router.get("/", validateRequest({ params: eventParamsSchema }), (req, res) => {
 
 router.post(
   "/:userId",
-  validateRequest({ params: eventUserParamsSchema, body: rsvpBodySchema }),
+  validateRequest({
+    params: validateEventUserParams,
+    body: validateRsvpBody,
+  }),
   (req, res) => {
     res.json({
       status: "saved",
