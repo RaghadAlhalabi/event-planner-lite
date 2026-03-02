@@ -1,4 +1,5 @@
-const API_BASE = "./api";
+const metaApiBase = document.querySelector("meta[name='api-base']");
+const API_BASE = metaApiBase?.content?.trim() || "./api";
 
 export const apiRequest = async (path, { method = "GET", body } = {}) => {
   const options = {
