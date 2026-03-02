@@ -13,6 +13,9 @@ Event Planner Lite is a full-stack web app for planning events, inviting attende
 - Server: Node.js + Express.
 - Database: PostgreSQL.
 
+**Live service**
+- https://event-planner-lite.onrender.com/
+
 **Run locally**
 - Client: `cd client` then `npm run dev`
 - Server: `cd server` then `npm run dev`
