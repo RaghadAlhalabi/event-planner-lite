@@ -87,7 +87,7 @@ input[type="email"] {
 
 button {
   border: none;
-  background: #d946ef;
+  background: #a21caf;
   color: #ffffff;
   padding: 0.7rem 1.2rem;
   border-radius: 12px;
@@ -95,7 +95,7 @@ button {
   cursor: pointer;
   font-weight: 600;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 12px 24px rgba(217, 70, 239, 0.28);
+  box-shadow: 0 12px 24px rgba(162, 28, 175, 0.3);
 }
 
 button:hover {
@@ -103,8 +103,15 @@ button:hover {
 }
 
 button.danger {
-  background: #f43f5e;
-  box-shadow: 0 10px 20px rgba(244, 63, 94, 0.25);
+  background: #be123c;
+  box-shadow: 0 10px 20px rgba(190, 18, 60, 0.28);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
 }
 
 .actions {
@@ -127,12 +134,40 @@ button.danger {
   font-weight: 600;
 }
 
+.network-indicator {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.network-indicator[data-online="true"] {
+  color: #14532d;
+  background: #dcfce7;
+}
+
+.network-indicator[data-online="false"] {
+  color: #9f1239;
+  background: #ffe4e6;
+}
+
 .status[data-type="error"] {
-  color: #e11d48;
+  color: #b91c1c;
 }
 
 .status[data-type="success"] {
-  color: #7c3aed;
+  color: #166534;
+}
+
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
 }
 
 details {

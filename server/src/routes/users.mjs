@@ -10,11 +10,11 @@ import {
 
 const router = Router();
 
-const ensureDatabase = (res) => {
+const ensureDatabase = (req, res) => {
   if (!hasDatabase || !pool) {
     res.status(503).json({
       error: "DatabaseUnavailable",
-      message: "Database is not configured.",
+      message: req.t("errors.DatabaseUnavailable"),
     });
     return false;
   }
@@ -26,7 +26,7 @@ router.post(
   "/",
   validateRequest({ body: validateCreateUserBody }),
   async (req, res) => {
-    if (!ensureDatabase(res)) {
+    if (!ensureDatabase(req, res)) {
       return;
     }
 
@@ -67,13 +67,13 @@ router.post(
       if (error?.code === "23505") {
         return res.status(409).json({
           error: "Conflict",
-          message: "User already exists.",
+          message: req.t("errors.Conflict"),
         });
       }
 
       return res.status(500).json({
         error: "DatabaseError",
-        message: "Failed to create user.",
+        message: req.t("errors.DatabaseError"),
       });
     }
   }
@@ -83,7 +83,7 @@ router.get(
   "/:userId",
   validateRequest({ params: validateUserIdParams }),
   async (req, res) => {
-    if (!ensureDatabase(res)) {
+    if (!ensureDatabase(req, res)) {
       return;
     }
 
@@ -107,7 +107,7 @@ router.get(
       if (result.rowCount === 0) {
         return res.status(404).json({
           error: "NotFound",
-          message: "User not found",
+          message: req.t("errors.NotFound"),
         });
       }
 
@@ -115,7 +115,7 @@ router.get(
     } catch (error) {
       return res.status(500).json({
         error: "DatabaseError",
-        message: "Failed to load user.",
+        message: req.t("errors.DatabaseError"),
       });
     }
   }
@@ -125,7 +125,7 @@ router.delete(
   "/:userId",
   validateRequest({ params: validateUserIdParams }),
   async (req, res) => {
-    if (!ensureDatabase(res)) {
+    if (!ensureDatabase(req, res)) {
       return;
     }
 
@@ -138,7 +138,7 @@ router.delete(
       if (result.rowCount === 0) {
         return res.status(404).json({
           error: "NotFound",
-          message: "User not found",
+          message: req.t("errors.NotFound"),
         });
       }
 
@@ -150,7 +150,7 @@ router.delete(
     } catch (error) {
       return res.status(500).json({
         error: "DatabaseError",
-        message: "Failed to delete user.",
+        message: req.t("errors.DatabaseError"),
       });
     }
   }

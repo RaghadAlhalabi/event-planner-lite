@@ -1,9 +1,45 @@
 import "./style.css";
+import { resolveLocale, t } from "./i18n/messages.js";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000/api";
 const STORAGE_KEY = "event_planner_lite_user";
+const locale = resolveLocale(navigator.language);
+const tr = (key, params = {}) => t(locale, key, params);
 
 const app = document.querySelector("#app");
+document.documentElement.lang = locale;
+
+const isOnline = () => navigator.onLine;
+
+const updateConnectionUi = () => {
+  const indicator = document.querySelector("[data-network-status]");
+  if (indicator) {
+    indicator.textContent = isOnline()
+      ? tr("ui.networkStatusOnline")
+      : tr("ui.networkStatusOffline");
+    indicator.dataset.online = String(isOnline());
+  }
+
+  const controls = document.querySelectorAll("[data-requires-network]");
+  controls.forEach((control) => {
+    control.disabled = !isOnline();
+  });
+};
+
+const localizeApiError = (errorPayload, fallbackKey) => {
+  if (typeof errorPayload?.message === "string" && errorPayload.message.trim()) {
+    return errorPayload.message;
+  }
+
+  if (errorPayload?.error) {
+    const translated = tr(`errors.${errorPayload.error}`);
+    if (translated !== `errors.${errorPayload.error}`) {
+      return translated;
+    }
+  }
+
+  return tr(fallbackKey);
+};
 
 const loadUser = () => {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -36,66 +72,67 @@ const render = () => {
   app.innerHTML = `
     <main class="page">
       <header class="hero">
-        <h1>Event Planner Lite</h1>
-        <p>Minimal user accounts with explicit consent.</p>
+        <h1>${tr("ui.title")}</h1>
+        <p>${tr("ui.subtitle")}</p>
       </header>
 
       <section class="panel">
-        <h2>${user ? "Account" : "Create account"}</h2>
-        <p class="status" data-status></p>
+        <h2>${user ? tr("ui.account") : tr("ui.createAccount")}</h2>
+        <p class="network-indicator" data-network-status aria-live="polite"></p>
+        <p class="status" data-status role="status" aria-live="polite"></p>
 
         ${
           user
             ? `
           <div class="account">
-            <div><strong>User ID:</strong> ${user.id}</div>
-            <div><strong>Email:</strong> ${user.email}</div>
-            <div><strong>Display name:</strong> ${user.displayName}</div>
-            <div><strong>Consent (ToS):</strong> ${user.tosConsentAt}</div>
-            <div><strong>Consent (Privacy):</strong> ${user.privacyConsentAt}</div>
+            <div><strong>${tr("ui.userId")}:</strong> ${user.id}</div>
+            <div><strong>${tr("ui.email")}:</strong> ${user.email}</div>
+            <div><strong>${tr("ui.displayName")}:</strong> ${user.displayName}</div>
+            <div><strong>${tr("ui.consentTos")}:</strong> ${user.tosConsentAt}</div>
+            <div><strong>${tr("ui.consentPrivacy")}:</strong> ${user.privacyConsentAt}</div>
           </div>
           <div class="actions">
-            <button type="button" data-action="refresh">Refresh profile</button>
-            <button type="button" class="danger" data-action="delete">Delete account</button>
+            <button type="button" data-action="refresh" data-requires-network>${tr("ui.refreshProfile")}</button>
+            <button type="button" class="danger" data-action="delete" data-requires-network>${tr("ui.deleteAccount")}</button>
           </div>
         `
             : `
           <form class="form" data-form="signup">
-            <label>
-              Email
-              <input type="email" name="email" placeholder="you@example.com" required />
+            <label for="email-input">
+              ${tr("ui.email")}
+              <input id="email-input" type="email" name="email" placeholder="${tr("ui.emailPlaceholder")}" autocomplete="email" required />
             </label>
-            <label>
-              Display name
-              <input type="text" name="displayName" placeholder="Sam" required />
+            <label for="display-name-input">
+              ${tr("ui.displayName")}
+              <input id="display-name-input" type="text" name="displayName" placeholder="${tr("ui.displayNamePlaceholder")}" autocomplete="name" required />
             </label>
             <div class="consent">
-              <label class="checkbox">
-                <input type="checkbox" name="tosConsent" required />
-                I agree to the Terms of Service
+              <label class="checkbox" for="tos-consent-input">
+                <input id="tos-consent-input" type="checkbox" name="tosConsent" required />
+                ${tr("ui.agreeTos")}
               </label>
-              <label class="checkbox">
-                <input type="checkbox" name="privacyConsent" required />
-                I agree to the Privacy Policy
+              <label class="checkbox" for="privacy-consent-input">
+                <input id="privacy-consent-input" type="checkbox" name="privacyConsent" required />
+                ${tr("ui.agreePrivacy")}
               </label>
             </div>
-            <button type="submit">Create account</button>
+            <button type="submit" data-requires-network>${tr("ui.submitCreateAccount")}</button>
           </form>
         `
         }
       </section>
 
       <section class="panel">
-        <h2>Policies</h2>
+        <h2>${tr("ui.policies")}</h2>
         <details>
-          <summary>Terms of Service (summary)</summary>
-          <p>Users own their data. The service is granted permission to use data to operate the app.</p>
-          <p>Accounts can be terminated for misuse. Deleting an account removes personal data.</p>
+          <summary>${tr("ui.termsSummary")}</summary>
+          <p>${tr("ui.termsText1")}</p>
+          <p>${tr("ui.termsText2")}</p>
         </details>
         <details>
-          <summary>Privacy Policy (summary)</summary>
-          <p>We collect email, display name, and consent timestamps. We use this to operate accounts.</p>
-          <p>You can withdraw consent by deleting your account.</p>
+          <summary>${tr("ui.privacySummary")}</summary>
+          <p>${tr("ui.privacyText1")}</p>
+          <p>${tr("ui.privacyText2")}</p>
         </details>
       </section>
     </main>
@@ -107,6 +144,11 @@ const render = () => {
       event.preventDefault();
       setStatus("");
 
+      if (!isOnline()) {
+        setStatus(tr("ui.statusRequiresOnline"), "error");
+        return;
+      }
+
       const formData = new FormData(form);
       const email = formData.get("email");
       const displayName = formData.get("displayName");
@@ -114,7 +156,7 @@ const render = () => {
       const privacyConsent = formData.get("privacyConsent");
 
       if (!tosConsent || !privacyConsent) {
-        setStatus("You must actively consent to both policies.", "error");
+        setStatus(tr("ui.statusNeedConsent"), "error");
         return;
       }
 
@@ -136,7 +178,7 @@ const render = () => {
 
         if (!response.ok) {
           const error = await response.json().catch(() => ({}));
-          setStatus(error.message || "Failed to create account.", "error");
+          setStatus(localizeApiError(error, "ui.statusCreateFailed"), "error");
           return;
         }
 
@@ -150,9 +192,9 @@ const render = () => {
         };
         saveUser(newUser);
         render();
-        setStatus("Account created.", "success");
+        setStatus(tr("ui.statusCreated"), "success");
       } catch (err) {
-        setStatus("Network error while creating account.", "error");
+        setStatus(tr("ui.statusCreateNetwork"), "error");
       }
     });
   } else {
@@ -161,25 +203,35 @@ const render = () => {
 
     refreshButton.addEventListener("click", async () => {
       setStatus("");
+
+      if (!isOnline()) {
+        setStatus(tr("ui.statusRequiresOnline"), "error");
+        return;
+      }
+
       try {
         const response = await fetch(`${API_BASE}/users/${user.id}`);
         if (!response.ok) {
-          setStatus("Unable to load profile.", "error");
+          const error = await response.json().catch(() => ({}));
+          setStatus(localizeApiError(error, "ui.statusLoadFailed"), "error");
           return;
         }
         const profile = await response.json();
         saveUser(profile);
         render();
-        setStatus("Profile refreshed.", "success");
+        setStatus(tr("ui.statusRefreshed"), "success");
       } catch {
-        setStatus("Network error while fetching profile.", "error");
+        setStatus(tr("ui.statusRefreshNetwork"), "error");
       }
     });
 
     deleteButton.addEventListener("click", async () => {
-      const ok = window.confirm(
-        "This will delete your account and retract consent. Continue?"
-      );
+      if (!isOnline()) {
+        setStatus(tr("ui.statusRequiresOnline"), "error");
+        return;
+      }
+
+      const ok = window.confirm(tr("ui.confirmDelete"));
       if (!ok) return;
 
       setStatus("");
@@ -190,19 +242,25 @@ const render = () => {
         });
 
         if (!response.ok) {
-          setStatus("Unable to delete account.", "error");
+          const error = await response.json().catch(() => ({}));
+          setStatus(localizeApiError(error, "ui.statusDeleteFailed"), "error");
           return;
         }
 
         clearUser();
         render();
-        setStatus("Account deleted.", "success");
+        setStatus(tr("ui.statusDeleted"), "success");
       } catch {
-        setStatus("Network error while deleting account.", "error");
+        setStatus(tr("ui.statusDeleteNetwork"), "error");
       }
     });
   }
+
+  updateConnectionUi();
 };
+
+window.addEventListener("online", updateConnectionUi);
+window.addEventListener("offline", updateConnectionUi);
 
 render();
 
