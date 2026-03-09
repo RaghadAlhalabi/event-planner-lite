@@ -1,5 +1,5 @@
+import "dotenv/config";
 import express from "express";
-import dotenv from "dotenv";
 
 import { applyMiddleware } from "./config/middleware.mjs";
 import eventsRouter from "./routes/events.mjs";
@@ -7,8 +7,6 @@ import healthRouter from "./routes/health.mjs";
 import invitationsRouter from "./routes/invitations.mjs";
 import rsvpsRouter from "./routes/rsvps.mjs";
 import usersRouter from "./routes/users.mjs";
-
-dotenv.config();
 
 const app = express();
 applyMiddleware(app);

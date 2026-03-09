@@ -18,7 +18,7 @@ router.get("/db", async (req, res) => {
   if (!hasDatabase || !pool) {
     return res.status(503).json({
       status: "unavailable",
-      message: "Database not configured",
+      message: req.t("errors.DatabaseUnavailable"),
     });
   }
 
@@ -26,7 +26,10 @@ router.get("/db", async (req, res) => {
     const result = await pool.query("SELECT NOW() AS now");
     res.json({ status: "ok", dbTime: result.rows[0].now });
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(500).json({
+      status: "error",
+      message: req.t("errors.DatabaseError"),
+    });
   }
 });
 
