@@ -16,20 +16,78 @@ Event Planner Lite is a full-stack web app for planning events, inviting attende
 **Live service**
 - https://event-planner-lite.onrender.com/
 
+## Localization (i18n/l10n)
+- Supported locales: `en` (English), `nb` (Norwegian Bokmal).
+- Server locale detection: `Accept-Language` with fallback to `en`.
+- Client locale behavior:
+	- default from browser language.
+	- manual language override from UI selector.
+	- selected locale persisted in local storage.
+- Localized content includes:
+	- UI labels and status messages.
+	- API error messages returned from server.
+	- formatted date/time and relative time using `Intl`.
+
+## PWA and Offline Behavior
+- Manifest includes id, scope, start URL, standalone display, and icons (192/512).
+- Service worker strategies:
+	- cache-first for app shell/static assets.
+	- network-first for API GET responses with cache fallback.
+	- stale-while-revalidate for images.
+- Offline UX:
+	- dedicated offline page fallback (`client/public/offline.html`).
+	- online/offline status indicator in UI.
+	- cached-profile freshness message with last-updated timestamp.
+
+## Service Worker Update UX
+- App detects waiting service worker and prompts user to refresh.
+- On acceptance, app sends `SKIP_WAITING` and reloads once on controller change.
+- This prevents users being stuck on old cached versions.
+
+## Accessibility Checklist (Manual + Automated)
+- Semantic headings and labels for form controls.
+- Keyboard-visible focus styles (`:focus-visible`).
+- Live regions for status updates and validation summary.
+- Error summary with focus directed to first invalid field.
+- Lighthouse accessibility score captured in project reports.
+
+## Lighthouse Evidence
+- Latest consolidated report file: `client/lighthouse-full.json`.
+- Current categories in that report:
+	- Performance: 100
+	- Accessibility: 100
+	- Best Practices: 100
+	- SEO: 100
+
+## Bonus and Advanced Notes
+- Advanced features that can be added next:
+	- queued offline writes with replay on reconnect.
+	- background sync (when supported).
+	- push notifications for invitations/RSVP reminders.
+	- richer service worker debugging guide and release workflow.
+
 **Run locally**
 - Client: `cd client` then `npm run dev`
 - Server: `cd server` then `npm run dev`
 
 ## Architecture Summary
-- Backend uses a layered API: routes → controllers → middleware → data/config.
-- Frontend follows MVC-style separation: views (templates + web components), controllers (UI logic), and a single API fetch manager.
-- Templates are embedded as HTML `<template>` elements in `index.html` and cloned at runtime to keep markup separate from logic.
+- Backend uses Express routes with request validation middleware and PostgreSQL data access.
+- Frontend is a Vite vanilla-JS app centered around `client/src/main.js` with localized UI text from `client/src/i18n/messages.js`.
+- PWA behavior is implemented via `client/public/sw.js` plus manifest/offline fallback assets.
 
 ## Scope At A Glance
-- Client PWA with cached shell and queued offline actions.
+- Client PWA with cached shell and offline fallback page.
 - Node.js/Express server with REST-ish endpoints.
 - PostgreSQL storage for users, events, invitations, and RSVPs.
-- JWT-based authentication and protected routes.
+- No JWT auth layer in the current implementation.
+
+## Implemented Flows
+- User account flow in UI: create profile, refresh profile, and delete profile.
+- Event management in UI: list, create, edit, delete, and refresh events.
+- Collaboration in UI (per event):
+	- send/list invitations.
+	- save/list RSVPs (yes/no/maybe + optional note).
+- Matching backend endpoints are implemented for `/users`, `/events`, `/events/:eventId/invitations`, and `/events/:eventId/rsvps`.
 
 ## Requirements Coverage
 - Client, Server, User accounts, PostgreSQL, REST-ish API, PWA, Offline functionality.

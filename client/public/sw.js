@@ -1,11 +1,14 @@
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const STATIC_CACHE = `event-planner-static-${CACHE_VERSION}`;
 const API_CACHE = `event-planner-api-${CACHE_VERSION}`;
+const IMAGE_CACHE = `event-planner-images-${CACHE_VERSION}`;
 const CACHE_PREFIX = "event-planner-";
+const OFFLINE_PAGE_URL = "/offline.html";
 
 const APP_SHELL_URLS = [
   "/",
   "/index.html",
+  OFFLINE_PAGE_URL,
   "/manifest.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
@@ -81,6 +84,12 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 function canCache(response) {
   return response && (response.ok || response.type === "opaque");
 }
@@ -110,6 +119,58 @@ async function networkFirst(request, cacheName, offlineFallback) {
     const cached = await cache.match(request);
     if (cached) return cached;
     return offlineFallback;
+  }
+}
+
+async function staleWhileRevalidate(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+
+  const networkPromise = fetch(request)
+    .then((networkResponse) => {
+      if (canCache(networkResponse)) {
+        cache.put(request, networkResponse.clone());
+      }
+      return networkResponse;
+    })
+    .catch(() => null);
+
+  if (cached) {
+    return cached;
+  }
+
+  const networkResponse = await networkPromise;
+  if (networkResponse) return networkResponse;
+
+  return new Response("Offline", {
+    status: 200,
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
+}
+
+async function navigateWithOfflineFallback(request) {
+  const cache = await caches.open(STATIC_CACHE);
+
+  try {
+    const networkResponse = await fetch(request);
+    if (canCache(networkResponse)) {
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch {
+    const cachedPage = await cache.match(request);
+    if (cachedPage) return cachedPage;
+
+    const appShell = await cache.match("/") || await cache.match("/index.html");
+    if (appShell) return appShell;
+
+    const offlinePage = await cache.match(OFFLINE_PAGE_URL);
+    if (offlinePage) return offlinePage;
+
+    return new Response("Offline", {
+      status: 200,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   }
 }
 
@@ -154,20 +215,16 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
-    event.respondWith(
-      networkFirst(
-        request,
-        STATIC_CACHE,
-        new Response("Offline", {
-          status: 200,
-          headers: { "Content-Type": "text/plain; charset=utf-8" },
-        })
-      )
-    );
+    event.respondWith(navigateWithOfflineFallback(request));
     return;
   }
 
   if (isStaticAssetRequest(request, url)) {
+    if (request.destination === "image") {
+      event.respondWith(staleWhileRevalidate(request, IMAGE_CACHE));
+      return;
+    }
+
     event.respondWith(
       cacheFirst(request, STATIC_CACHE).catch(() =>
         new Response("Offline", {
