@@ -6,7 +6,7 @@ import { validateRequest } from "../middleware/validateRequest.mjs";
 import {
   validateCreateUserBody,
   validateUserIdParams,
-} from "../validators/users.mjs";
+} from "../validators/userValidator.mjs";
 
 const router = Router();
 

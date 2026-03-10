@@ -13,8 +13,9 @@ Event Planner Lite is a full-stack web app for planning events, inviting attende
 - Server: Node.js + Express.
 - Database: PostgreSQL.
 
-**Live service**
-- https://event-planner-lite.onrender.com/
+**Live services**
+- Frontend (Render Static Site): https://event-planner-lite-1.onrender.com
+- Backend API (Render Web Service): https://event-planner-lite.onrender.com
 
 ## Localization (i18n/l10n)
 - Supported locales: `en` (English), `nb` (Norwegian Bokmal).
@@ -74,6 +75,16 @@ Event Planner Lite is a full-stack web app for planning events, inviting attende
 - Backend uses Express routes with request validation middleware and PostgreSQL data access.
 - Frontend is a Vite vanilla-JS app centered around `client/src/main.js` with localized UI text from `client/src/i18n/messages.js`.
 - PWA behavior is implemented via `client/public/sw.js` plus manifest/offline fallback assets.
+
+## Naming and Structure Conventions
+- Global middleware composition is centralized in `server/src/middleware/index.mjs`.
+- Route-level middleware lives in `server/src/middleware/` (for example `validateRequest.mjs`, `locale.mjs`).
+- Validators use singular descriptive filenames in `server/src/validators/`:
+	- `userValidator.mjs`
+	- `eventValidator.mjs`
+	- `invitationValidator.mjs`
+	- `rsvpValidator.mjs`
+- Shared validator helpers are in `server/src/validators/validationUtils.mjs`.
 
 ## Scope At A Glance
 - Client PWA with cached shell and offline fallback page.

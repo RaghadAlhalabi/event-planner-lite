@@ -6,7 +6,7 @@ import { validateRequest } from "../middleware/validateRequest.mjs";
 import {
   validateCreateInvitationBody,
   validateEventParams,
-} from "../validators/invitations.mjs";
+} from "../validators/invitationValidator.mjs";
 
 const router = Router({ mergeParams: true });
 

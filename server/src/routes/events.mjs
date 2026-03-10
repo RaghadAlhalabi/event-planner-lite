@@ -6,7 +6,7 @@ import { validateRequest } from "../middleware/validateRequest.mjs";
 import {
   validateCreateEventBody,
   validateEventParams,
-} from "../validators/events.mjs";
+} from "../validators/eventValidator.mjs";
 
 const router = Router();
 
