@@ -5,7 +5,7 @@ import request from "supertest";
 
 import { localeMiddleware } from "../src/middleware/locale.mjs";
 import { validateRequest } from "../src/middleware/validateRequest.mjs";
-import { validateCreateUserBody } from "../src/validators/users.mjs";
+import { validateCreateUserBody } from "../src/validators/userValidator.mjs";
 
 function buildApp() {
   const app = express();

@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
-import { localeMiddleware } from "../middleware/locale.mjs";
+
+import { localeMiddleware } from "./locale.mjs";
 
 export const applyMiddleware = (app) => {
   app.use(cors());

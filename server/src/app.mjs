@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 
-import { applyMiddleware } from "./config/middleware.mjs";
+import { applyMiddleware } from "./middleware/index.mjs";
 import eventsRouter from "./routes/events.mjs";
 import healthRouter from "./routes/health.mjs";
 import invitationsRouter from "./routes/invitations.mjs";

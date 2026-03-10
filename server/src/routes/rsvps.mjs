@@ -7,7 +7,7 @@ import {
   validateEventParams,
   validateEventUserParams,
   validateRsvpBody,
-} from "../validators/rsvps.mjs";
+} from "../validators/rsvpValidator.mjs";
 
 const router = Router({ mergeParams: true });
 
