@@ -11,6 +11,15 @@ import usersRouter from "./routes/users.mjs";
 const app = express();
 applyMiddleware(app);
 
+app.get("/", (req, res) => {
+  res.json({
+    name: "Event Planner Lite API",
+    status: "ok",
+    docs: "/api/health",
+    time: new Date().toISOString(),
+  });
+});
+
 app.use("/api/events", eventsRouter);
 app.use("/api/events/:eventId/invitations", invitationsRouter);
 app.use("/api/events/:eventId/rsvps", rsvpsRouter);
