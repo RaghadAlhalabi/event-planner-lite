@@ -62,6 +62,25 @@ const toApiEvent = (row) => ({
   createdAt: row.created_at,
 });
 
+const getRequestUserId = (req) => {
+  const value = req.get("x-user-id");
+  return typeof value === "string" ? value.trim() : "";
+};
+
+const requireRequestUserId = (req, res) => {
+  const userId = getRequestUserId(req);
+
+  if (!userId) {
+    res.status(401).json({
+      error: "Unauthorized",
+      message: req.t("errors.Unauthorized"),
+    });
+    return null;
+  }
+
+  return userId;
+};
+
 router.get("/", async (req, res) => {
   if (!ensureDatabase(req, res)) {
     return;
@@ -128,6 +147,11 @@ router.post(
       return;
     }
 
+    const requestUserId = requireRequestUserId(req, res);
+    if (!requestUserId) {
+      return;
+    }
+
     try {
       await ensureEventsTable();
 
@@ -135,9 +159,9 @@ router.post(
       const result = await pool.query(
         `
           INSERT INTO events
-            (external_id, title, starts_at, ends_at, location, notes, description, event_date)
+            (external_id, title, starts_at, ends_at, location, notes, description, event_date, user_id)
           VALUES
-            ($1, $2, $3::timestamptz, $4::timestamptz, $5, $6, $6, ($3::timestamptz)::date)
+            ($1, $2, $3::timestamptz, $4::timestamptz, $5, $6, $6, ($3::timestamptz)::date, $7)
           RETURNING
             id,
             external_id,
@@ -156,6 +180,7 @@ router.post(
           req.body.endsAt ?? null,
           req.body.location ?? null,
           req.body.notes ?? null,
+          requestUserId,
         ]
       );
 
@@ -224,6 +249,11 @@ router.put(
       return;
     }
 
+    const requestUserId = requireRequestUserId(req, res);
+    if (!requestUserId) {
+      return;
+    }
+
     try {
       await ensureEventsTable();
 
@@ -238,7 +268,8 @@ router.put(
             notes = $6,
             description = $6,
             event_date = ($3::timestamptz)::date
-          WHERE external_id = $1 OR id::text = $1
+          WHERE (external_id = $1 OR id::text = $1)
+            AND user_id = $7
           RETURNING id
         `,
         [
@@ -248,10 +279,23 @@ router.put(
           req.body.endsAt ?? null,
           req.body.location ?? null,
           req.body.notes ?? null,
+          requestUserId,
         ]
       );
 
       if (result.rowCount === 0) {
+        const eventExists = await pool.query(
+          "SELECT id FROM events WHERE external_id = $1 OR id::text = $1 LIMIT 1",
+          [req.params.eventId]
+        );
+
+        if (eventExists.rowCount > 0) {
+          return res.status(403).json({
+            error: "Forbidden",
+            message: req.t("errors.Forbidden"),
+          });
+        }
+
         return res.status(404).json({
           error: "NotFound",
           message: req.t("errors.NotFound"),
@@ -276,19 +320,37 @@ router.delete(
       return;
     }
 
+    const requestUserId = requireRequestUserId(req, res);
+    if (!requestUserId) {
+      return;
+    }
+
     try {
       await ensureEventsTable();
 
       const result = await pool.query(
         `
           DELETE FROM events
-          WHERE external_id = $1 OR id::text = $1
+          WHERE (external_id = $1 OR id::text = $1)
+            AND user_id = $2
           RETURNING id
         `,
-        [req.params.eventId]
+        [req.params.eventId, requestUserId]
       );
 
       if (result.rowCount === 0) {
+        const eventExists = await pool.query(
+          "SELECT id FROM events WHERE external_id = $1 OR id::text = $1 LIMIT 1",
+          [req.params.eventId]
+        );
+
+        if (eventExists.rowCount > 0) {
+          return res.status(403).json({
+            error: "Forbidden",
+            message: req.t("errors.Forbidden"),
+          });
+        }
+
         return res.status(404).json({
           error: "NotFound",
           message: req.t("errors.NotFound"),

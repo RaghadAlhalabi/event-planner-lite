@@ -26,6 +26,7 @@ export function validateCreateUserBody(body) {
       body,
       [
         "email",
+        "password",
         "displayName",
         "tosConsentAt",
         "privacyConsentAt",
@@ -34,10 +35,23 @@ export function validateCreateUserBody(body) {
       errors
     );
     requireEmail(body, "email", errors);
+    requireString(body, "password", errors, { min: 8 });
     requireString(body, "displayName", errors, { min: 1 });
     requireDateTime(body, "tosConsentAt", errors);
     requireDateTime(body, "privacyConsentAt", errors);
     optionalString(body, "timezone", errors, { min: 1 });
+  }
+
+  return { value: body, errors };
+}
+
+export function validateLoginUserBody(body) {
+  const errors = [];
+
+  if (ensurePlainObject(body, errors)) {
+    hasOnlyKeys(body, ["email", "password"], errors);
+    requireEmail(body, "email", errors);
+    requireString(body, "password", errors, { min: 8 });
   }
 
   return { value: body, errors };

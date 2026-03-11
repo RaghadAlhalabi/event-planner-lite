@@ -9,6 +9,10 @@ export const messages = {
       Conflict: "User already exists.",
       DatabaseError: "A database error occurred.",
       NotFound: "Resource not found.",
+      InvalidCredentials: "Invalid email or password.",
+      LegacyAccount: "This account was created before password login. Create a new account with a password.",
+      Unauthorized: "Authentication required.",
+      Forbidden: "You do not have permission to modify this resource.",
     },
     validation: {
       expectedObject: "Expected object",
@@ -28,6 +32,10 @@ export const messages = {
       Conflict: "Bruker finnes allerede.",
       DatabaseError: "En databasefeil oppstod.",
       NotFound: "Ressurs ikke funnet.",
+      InvalidCredentials: "Ugyldig e-post eller passord.",
+      LegacyAccount: "Denne kontoen ble opprettet foer passordinnlogging. Opprett en ny konto med passord.",
+      Unauthorized: "Autentisering kreves.",
+      Forbidden: "Du har ikke tilgang til aa endre denne ressursen.",
     },
     validation: {
       expectedObject: "Forventet objekt",

@@ -186,6 +186,16 @@ const saveUserState = (user, cachedAt = new Date().toISOString()) => {
   );
 };
 
+const getCurrentUserId = () => {
+  const { user } = loadUserState();
+  return typeof user?.id === "string" ? user.id.trim() : "";
+};
+
+const buildUserHeaders = (headers = {}) => {
+  const userId = getCurrentUserId();
+  return userId ? { ...headers, "x-user-id": userId } : headers;
+};
+
 const resetEventsState = () => {
   eventsState = {
     items: [],
@@ -287,7 +297,9 @@ const loadEvents = async ({ showLoading = true } = {}) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/events`);
+    const userId = getCurrentUserId();
+    const query = userId ? `?ownerId=${encodeURIComponent(userId)}` : "";
+    const response = await fetch(`${API_BASE}/events${query}`);
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
@@ -585,10 +597,24 @@ const render = () => {
           </div>
           <div class="actions">
             <button type="button" data-action="refresh" data-requires-network>${tr("ui.refreshProfile")}</button>
+            <button type="button" class="secondary" data-action="logout">${tr("ui.logout")}</button>
             <button type="button" class="danger" data-action="delete" data-requires-network>${tr("ui.deleteAccount")}</button>
           </div>
         `
             : `
+          <form class="form" data-form="login" novalidate>
+            <h3>${tr("ui.loginExistingAccount")}</h3>
+            <label for="login-email-input">
+              ${tr("ui.loginEmailLabel")}
+              <input id="login-email-input" type="email" name="email" placeholder="${tr("ui.emailPlaceholder")}" autocomplete="email" required />
+            </label>
+            <label for="login-password-input">
+              ${tr("ui.loginPasswordLabel")}
+              <input id="login-password-input" type="password" name="password" placeholder="${tr("ui.passwordPlaceholder")}" autocomplete="current-password" minlength="8" required />
+            </label>
+            <button type="submit" data-requires-network>${tr("ui.loginButton")}</button>
+          </form>
+
           <form class="form" data-form="signup" novalidate>
             <label for="email-input">
               ${tr("ui.email")}
@@ -597,6 +623,10 @@ const render = () => {
             <label for="display-name-input">
               ${tr("ui.displayName")}
               <input id="display-name-input" type="text" name="displayName" placeholder="${tr("ui.displayNamePlaceholder")}" autocomplete="name" required />
+            </label>
+            <label for="password-input">
+              ${tr("ui.loginPasswordLabel")}
+              <input id="password-input" type="password" name="password" placeholder="${tr("ui.passwordPlaceholder")}" autocomplete="new-password" minlength="8" required />
             </label>
             <div class="consent">
               <label class="checkbox" for="tos-consent-input">
@@ -680,7 +710,63 @@ const render = () => {
   wireInstallButton();
 
   if (!user) {
+    const loginForm = document.querySelector("[data-form='login']");
     const form = document.querySelector("[data-form='signup']");
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      setStatus("");
+      setErrorSummary("");
+
+      const submitButton = loginForm.querySelector("button[type='submit']");
+
+      if (!isOnline()) {
+        const message = tr("ui.statusRequiresOnline");
+        setStatus(message, "error");
+        setErrorSummary(message);
+        return;
+      }
+
+      if (!loginForm.reportValidity()) {
+        focusFirstInvalidControl(loginForm);
+        return;
+      }
+
+      const formData = new FormData(loginForm);
+      const email = String(formData.get("email") || "").trim();
+      const password = String(formData.get("password") || "");
+      setControlLoading(submitButton, true, tr("ui.loginButton"));
+
+      try {
+        const response = await fetch(`${API_BASE}/users/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          const message = localizeApiError(error, "ui.statusLoginFailed");
+          setStatus(message, "error");
+          setErrorSummary(message);
+          return;
+        }
+
+        const profile = await response.json();
+        saveUserState(profile);
+        render();
+        setStatus(tr("ui.statusLoggedIn"), "success");
+      } catch {
+        const message = tr("ui.statusLoginNetwork");
+        setStatus(message, "error");
+        setErrorSummary(message);
+      } finally {
+        setControlLoading(submitButton, false, tr("ui.loginButton"));
+      }
+    });
+
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       setStatus("");
@@ -702,6 +788,7 @@ const render = () => {
 
       const formData = new FormData(form);
       const email = formData.get("email");
+      const password = String(formData.get("password") || "");
       const displayName = formData.get("displayName");
       const now = new Date().toISOString();
       setControlLoading(submitButton, true, tr("ui.loadingCreateAccount"));
@@ -714,6 +801,7 @@ const render = () => {
           },
           body: JSON.stringify({
             email,
+            password,
             displayName,
             tosConsentAt: now,
             privacyConsentAt: now,
@@ -750,7 +838,14 @@ const render = () => {
     });
   } else {
     const refreshButton = document.querySelector("[data-action='refresh']");
+    const logoutButton = document.querySelector("[data-action='logout']");
     const deleteButton = document.querySelector("[data-action='delete']");
+
+    logoutButton.addEventListener("click", () => {
+      clearUser();
+      render();
+      setStatus(tr("ui.statusLoggedOut"), "success");
+    });
 
     refreshButton.addEventListener("click", async () => {
       setStatus("");
@@ -866,6 +961,11 @@ const render = () => {
         return;
       }
 
+      if (!user?.id) {
+        setEventsStatus(tr("ui.eventsSaveFailed"), "error");
+        return;
+      }
+
       const formData = new FormData(eventsForm);
       const startsAtIso = toIsoFromInput(String(formData.get("startsAt") || ""));
       const endsAtRaw = String(formData.get("endsAt") || "").trim();
@@ -901,9 +1001,9 @@ const render = () => {
       try {
         const response = await fetch(endpoint, {
           method,
-          headers: {
+          headers: buildUserHeaders({
             "Content-Type": "application/json",
-          },
+          }),
           body: JSON.stringify(payload),
         });
 
@@ -1112,6 +1212,11 @@ const render = () => {
           return;
         }
 
+        if (!user?.id) {
+          setEventsStatus(tr("ui.eventsDeleteFailed"), "error");
+          return;
+        }
+
         const ok = window.confirm(tr("ui.eventsConfirmDelete"));
         if (!ok) return;
 
@@ -1120,6 +1225,7 @@ const render = () => {
         try {
           const response = await fetch(`${API_BASE}/events/${eventId}`, {
             method: "DELETE",
+            headers: buildUserHeaders(),
           });
 
           if (!response.ok) {
