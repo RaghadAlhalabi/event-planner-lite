@@ -287,8 +287,7 @@ const setCollectionStatus = (collectionName, eventId, message, type = "info") =>
 
 const loadEvents = async ({ showLoading = true } = {}) => {
   if (!isOnline()) {
-    eventsState.error = tr("ui.statusRequiresOnline");
-    return;
+    setEventsStatus(tr("ui.eventsOfflineCacheHint"), "info");
   }
 
   if (showLoading) {
@@ -325,8 +324,7 @@ const loadInvitations = async (eventId, { showLoading = true } = {}) => {
   const invitationState = ensureEventCollectionState("invitations", eventId);
 
   if (!isOnline()) {
-    invitationState.error = tr("ui.statusRequiresOnline");
-    return;
+    setCollectionStatus("invitations", eventId, tr("ui.invitationsOfflineCacheHint"), "info");
   }
 
   if (showLoading) {
@@ -335,7 +333,9 @@ const loadInvitations = async (eventId, { showLoading = true } = {}) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/events/${eventId}/invitations`);
+    const response = await fetch(`${API_BASE}/events/${eventId}/invitations`, {
+      headers: buildUserHeaders(),
+    });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
@@ -361,8 +361,7 @@ const loadRsvps = async (eventId, { showLoading = true } = {}) => {
   const rsvpState = ensureEventCollectionState("rsvps", eventId);
 
   if (!isOnline()) {
-    rsvpState.error = tr("ui.statusRequiresOnline");
-    return;
+    setCollectionStatus("rsvps", eventId, tr("ui.rsvpsOfflineCacheHint"), "info");
   }
 
   if (showLoading) {
@@ -371,7 +370,9 @@ const loadRsvps = async (eventId, { showLoading = true } = {}) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/events/${eventId}/rsvps`);
+    const response = await fetch(`${API_BASE}/events/${eventId}/rsvps`, {
+      headers: buildUserHeaders(),
+    });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
@@ -930,11 +931,6 @@ const render = () => {
     refreshEventsButton?.addEventListener("click", async () => {
       setEventsStatus("");
 
-      if (!isOnline()) {
-        setEventsStatus(tr("ui.statusRequiresOnline"), "error");
-        return;
-      }
-
       setControlLoading(refreshEventsButton, true, tr("ui.eventsLoading"));
 
       await loadEvents({ showLoading: true });
@@ -1045,11 +1041,11 @@ const render = () => {
           const invitationState = ensureEventCollectionState("invitations", eventId);
           const rsvpState = ensureEventCollectionState("rsvps", eventId);
 
-          if (!invitationState.loaded && !invitationState.loading && isOnline()) {
+          if (!invitationState.loaded && !invitationState.loading) {
             loadInvitations(eventId, { showLoading: true });
           }
 
-          if (!rsvpState.loaded && !rsvpState.loading && isOnline()) {
+          if (!rsvpState.loaded && !rsvpState.loading) {
             loadRsvps(eventId, { showLoading: true });
           }
         }
@@ -1060,12 +1056,6 @@ const render = () => {
       button.addEventListener("click", async () => {
         const eventId = button.dataset.eventId;
         if (!eventId) return;
-
-        if (!isOnline()) {
-          setCollectionStatus("invitations", eventId, tr("ui.statusRequiresOnline"), "error");
-          render();
-          return;
-        }
 
         setControlLoading(button, true, tr("ui.invitationsLoading"));
         await loadInvitations(eventId, { showLoading: true });
@@ -1078,12 +1068,6 @@ const render = () => {
       button.addEventListener("click", async () => {
         const eventId = button.dataset.eventId;
         if (!eventId) return;
-
-        if (!isOnline()) {
-          setCollectionStatus("rsvps", eventId, tr("ui.statusRequiresOnline"), "error");
-          render();
-          return;
-        }
 
         setControlLoading(button, true, tr("ui.rsvpsLoading"));
         await loadRsvps(eventId, { showLoading: true });
@@ -1118,9 +1102,9 @@ const render = () => {
         try {
           const response = await fetch(`${API_BASE}/events/${eventId}/invitations`, {
             method: "POST",
-            headers: {
+            headers: buildUserHeaders({
               "Content-Type": "application/json",
-            },
+            }),
             body: JSON.stringify({ email }),
           });
 
@@ -1173,11 +1157,11 @@ const render = () => {
         setControlLoading(submitButton, true, tr("ui.rsvpSaving"));
 
         try {
-          const response = await fetch(`${API_BASE}/events/${eventId}/rsvps/${user.id}`, {
+          const response = await fetch(`${API_BASE}/events/${eventId}/rsvps`, {
             method: "POST",
-            headers: {
+            headers: buildUserHeaders({
               "Content-Type": "application/json",
-            },
+            }),
             body: JSON.stringify({
               status,
               note: note || null,
@@ -1248,7 +1232,7 @@ const render = () => {
       });
     });
 
-    if (!eventsState.loaded && !eventsState.loading && isOnline()) {
+    if (!eventsState.loaded && !eventsState.loading) {
       loadEvents({ showLoading: true });
     }
   }

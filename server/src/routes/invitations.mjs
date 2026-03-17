@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 
 import pool, { hasDatabase } from "../db/pool.mjs";
 import { validateRequest } from "../middleware/validateRequest.mjs";
+import { sendInvitationEmail } from "../services/email.mjs";
 import {
   validateCreateInvitationBody,
   validateEventParams,
@@ -44,7 +45,9 @@ const ensureTables = async () => {
           ADD COLUMN IF NOT EXISTS ends_at TIMESTAMPTZ,
           ADD COLUMN IF NOT EXISTS location VARCHAR(255),
           ADD COLUMN IF NOT EXISTS notes TEXT,
-          ADD COLUMN IF NOT EXISTS external_id VARCHAR(64) UNIQUE
+          ADD COLUMN IF NOT EXISTS external_id VARCHAR(64) UNIQUE,
+          ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ,
+          ADD COLUMN IF NOT EXISTS archived_reason VARCHAR(64)
       `);
 
       await pool.query(`
@@ -71,9 +74,10 @@ const ensureTables = async () => {
 const findEventByParamId = async (eventId) => {
   const result = await pool.query(
     `
-      SELECT id, external_id
+      SELECT id, external_id, user_id, title, starts_at, location
       FROM events
-      WHERE external_id = $1 OR id::text = $1
+      WHERE (external_id = $1 OR id::text = $1)
+        AND archived_at IS NULL
       LIMIT 1
     `,
     [eventId]
@@ -88,8 +92,32 @@ const toApiInvitation = (row) => ({
   status: row.status,
 });
 
+const getRequestUserId = (req) => {
+  const value = req.get("x-user-id");
+  return typeof value === "string" ? value.trim() : "";
+};
+
+const requireRequestUserId = (req, res) => {
+  const userId = getRequestUserId(req);
+
+  if (!userId) {
+    res.status(401).json({
+      error: "Unauthorized",
+      message: req.t("errors.Unauthorized"),
+    });
+    return null;
+  }
+
+  return userId;
+};
+
 router.get("/", validateRequest({ params: validateEventParams }), async (req, res) => {
   if (!ensureDatabase(req, res)) {
+    return;
+  }
+
+  const requestUserId = requireRequestUserId(req, res);
+  if (!requestUserId) {
     return;
   }
 
@@ -101,6 +129,13 @@ router.get("/", validateRequest({ params: validateEventParams }), async (req, re
       return res.status(404).json({
         error: "NotFound",
         message: req.t("errors.NotFound"),
+      });
+    }
+
+    if (event.user_id !== requestUserId) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: req.t("errors.Forbidden"),
       });
     }
 
@@ -136,6 +171,11 @@ router.post(
       return;
     }
 
+    const requestUserId = requireRequestUserId(req, res);
+    if (!requestUserId) {
+      return;
+    }
+
     try {
       await ensureTables();
 
@@ -144,6 +184,13 @@ router.post(
         return res.status(404).json({
           error: "NotFound",
           message: req.t("errors.NotFound"),
+        });
+      }
+
+      if (event.user_id !== requestUserId) {
+        return res.status(403).json({
+          error: "Forbidden",
+          message: req.t("errors.Forbidden"),
         });
       }
 
@@ -157,7 +204,37 @@ router.post(
         [externalId, event.id, req.body.email.toLowerCase()]
       );
 
-      res.status(201).json({ id: result.rows[0].external_id });
+      const invitationId = result.rows[0].external_id;
+      const emailResult = await sendInvitationEmail({
+        to: req.body.email.toLowerCase(),
+        event,
+        invitationId,
+      });
+
+      let status = "pending";
+
+      if (emailResult.sent) {
+        status = "sent";
+        await pool.query(
+          "UPDATE invitations SET status = 'sent' WHERE external_id = $1",
+          [invitationId]
+        );
+      } else if (emailResult.reason === "EmailSendFailed") {
+        status = "failed_email";
+        await pool.query(
+          "UPDATE invitations SET status = 'failed_email' WHERE external_id = $1",
+          [invitationId]
+        );
+      }
+
+      res.status(201).json({
+        id: invitationId,
+        status,
+        emailDelivery: {
+          sent: emailResult.sent,
+          reason: emailResult.reason,
+        },
+      });
     } catch {
       res.status(500).json({
         error: "DatabaseError",
