@@ -40,6 +40,24 @@ Event Planner Lite is a full-stack web app for planning events, inviting attende
 	- online/offline status indicator in UI.
 	- cached-profile freshness message with last-updated timestamp.
 
+## Invitation Email Delivery
+- Invitation records are stored in PostgreSQL and can also be delivered as real emails via SMTP when enabled.
+- Required server environment variables:
+	- `EMAIL_ENABLED=true`
+	- `SMTP_HOST`
+	- `SMTP_PORT`
+	- `SMTP_SECURE` (`true` for SSL, often `false` for STARTTLS on port 587)
+	- `SMTP_USER`
+	- `SMTP_PASS`
+	- `SMTP_FROM`
+	- `APP_BASE_URL` (used for invitation links in email body)
+- If SMTP is not configured or disabled, invitations are created with `pending` status but no email is sent.
+- SMTP test endpoint (protected):
+	- `POST /api/health/email-test`
+	- Header: `x-email-test-token: <EMAIL_TEST_TOKEN>`
+	- Body: `{ "to": "your-email@example.com" }`
+	- Returns `status: ok` when SMTP send succeeds.
+
 ## Service Worker Update UX
 - App detects waiting service worker and prompts user to refresh.
 - On acceptance, app sends `SKIP_WAITING` and reloads once on controller change.

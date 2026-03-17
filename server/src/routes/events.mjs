@@ -44,7 +44,9 @@ const ensureEventsTable = async () => {
           ADD COLUMN IF NOT EXISTS ends_at TIMESTAMPTZ,
           ADD COLUMN IF NOT EXISTS location VARCHAR(255),
           ADD COLUMN IF NOT EXISTS notes TEXT,
-          ADD COLUMN IF NOT EXISTS external_id VARCHAR(64) UNIQUE
+          ADD COLUMN IF NOT EXISTS external_id VARCHAR(64) UNIQUE,
+          ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ,
+          ADD COLUMN IF NOT EXISTS archived_reason VARCHAR(64)
       `);
     })();
   }
@@ -107,7 +109,7 @@ router.get("/", async (req, res) => {
       where.push(`COALESCE(starts_at, event_date::timestamptz) <= $${values.length}::timestamptz`);
     }
 
-    const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+    const whereClause = ["archived_at IS NULL", ...where].join(" AND ");
 
     const result = await pool.query(
       `
@@ -122,7 +124,7 @@ router.get("/", async (req, res) => {
           description,
           created_at AS "created_at"
         FROM events
-        ${whereClause}
+        WHERE ${whereClause}
         ORDER BY COALESCE(starts_at, created_at) ASC
       `,
       values
@@ -219,6 +221,7 @@ router.get(
             created_at AS "created_at"
           FROM events
           WHERE external_id = $1 OR id::text = $1
+            AND archived_at IS NULL
           LIMIT 1
         `,
         [req.params.eventId]
@@ -269,6 +272,7 @@ router.put(
             description = $6,
             event_date = ($3::timestamptz)::date
           WHERE (external_id = $1 OR id::text = $1)
+            AND archived_at IS NULL
             AND user_id = $7
           RETURNING id
         `,
@@ -285,7 +289,7 @@ router.put(
 
       if (result.rowCount === 0) {
         const eventExists = await pool.query(
-          "SELECT id FROM events WHERE external_id = $1 OR id::text = $1 LIMIT 1",
+          "SELECT id FROM events WHERE (external_id = $1 OR id::text = $1) AND archived_at IS NULL LIMIT 1",
           [req.params.eventId]
         );
 
@@ -332,6 +336,7 @@ router.delete(
         `
           DELETE FROM events
           WHERE (external_id = $1 OR id::text = $1)
+            AND archived_at IS NULL
             AND user_id = $2
           RETURNING id
         `,
@@ -340,7 +345,7 @@ router.delete(
 
       if (result.rowCount === 0) {
         const eventExists = await pool.query(
-          "SELECT id FROM events WHERE external_id = $1 OR id::text = $1 LIMIT 1",
+          "SELECT id FROM events WHERE (external_id = $1 OR id::text = $1) AND archived_at IS NULL LIMIT 1",
           [req.params.eventId]
         );
 

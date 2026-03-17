@@ -261,11 +261,29 @@ router.delete(
       const hasEventsTableResult = await dbClient.query(
         "SELECT to_regclass('public.events') IS NOT NULL AS exists"
       );
+
+      let archivedEventsCount = 0;
       if (hasEventsTableResult.rows[0]?.exists) {
-        await dbClient.query(
-          "UPDATE events SET user_id = NULL WHERE user_id = $1",
+        await dbClient.query(`
+          ALTER TABLE events
+            ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ,
+            ADD COLUMN IF NOT EXISTS archived_reason VARCHAR(64)
+        `);
+
+        const archiveEventsResult = await dbClient.query(
+          `
+            UPDATE events
+            SET
+              user_id = NULL,
+              archived_at = CURRENT_TIMESTAMP,
+              archived_reason = 'owner_deleted'
+            WHERE user_id = $1
+          `,
           [req.params.userId]
         );
+
+        archivedEventsCount = archiveEventsResult.rowCount || 0;
+
       }
 
       const result = await dbClient.query(
@@ -287,6 +305,8 @@ router.delete(
         status: "deleted",
         userId: req.params.userId,
         publicContributionsRetained: true,
+        archivedEventsCount,
+        eventsLifecyclePolicy: "soft-delete-on-owner-deletion",
       });
     } catch (error) {
       try {
