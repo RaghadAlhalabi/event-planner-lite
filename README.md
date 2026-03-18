@@ -44,6 +44,7 @@ Event Planner Lite is a full-stack web app for planning events, inviting attende
 - Invitation records are stored in PostgreSQL and can also be delivered as real emails via SMTP when enabled.
 - Required server environment variables:
 	- `EMAIL_ENABLED=true`
+	- `EMAIL_PROVIDER` (`smtp` by default, or `resend`)
 	- `SMTP_HOST`
 	- `SMTP_PORT`
 	- `SMTP_SECURE` (`true` for SSL, often `false` for STARTTLS on port 587)
@@ -51,7 +52,12 @@ Event Planner Lite is a full-stack web app for planning events, inviting attende
 	- `SMTP_PASS`
 	- `SMTP_FROM`
 	- `APP_BASE_URL` (used for invitation links in email body)
+- Optional (recommended fallback if Gmail SMTP fails):
+	- `EMAIL_PROVIDER=resend`
+	- `RESEND_API_KEY`
+	- `RESEND_FROM`
 - If SMTP is not configured or disabled, invitations are created with `pending` status but no email is sent.
+- Invitation create response includes `emailDelivery.provider` and `emailDelivery.detail` for troubleshooting delivery errors.
 - SMTP test endpoint (protected):
 	- `POST /api/health/email-test`
 	- Header: `x-email-test-token: <EMAIL_TEST_TOKEN>`

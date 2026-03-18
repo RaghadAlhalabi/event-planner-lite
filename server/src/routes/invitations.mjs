@@ -219,7 +219,7 @@ router.post(
           "UPDATE invitations SET status = 'sent' WHERE external_id = $1",
           [invitationId]
         );
-      } else if (emailResult.reason === "EmailSendFailed") {
+      } else {
         status = "failed_email";
         await pool.query(
           "UPDATE invitations SET status = 'failed_email' WHERE external_id = $1",
@@ -233,6 +233,8 @@ router.post(
         emailDelivery: {
           sent: emailResult.sent,
           reason: emailResult.reason,
+          provider: emailResult.provider || null,
+          detail: emailResult.detail || null,
         },
       });
     } catch {
