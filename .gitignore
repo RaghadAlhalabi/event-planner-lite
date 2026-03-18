@@ -15,7 +15,6 @@ build/
 # OS / IDE
 .DS_Store
 Thumbs.db
-.vscode/
 .idea/
 
 # Uploads / temp
