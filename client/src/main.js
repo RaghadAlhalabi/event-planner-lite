@@ -4,6 +4,7 @@ import { DEFAULT_LOCALE, SUPPORTED_LOCALES, resolveLocale, t } from "./i18n/mess
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000/api";
 const STORAGE_KEY = "event_planner_lite_user";
 const LOCALE_STORAGE_KEY = "event_planner_lite_locale";
+const PENDING_INVITE_KEY = "event_planner_pending_invite";
 
 let deferredInstallPrompt = null;
 let currentLocale = resolveInitialLocale();
@@ -20,6 +21,72 @@ let eventsState = {
 
 const app = document.querySelector("#app");
 applyLocaleToDocument();
+
+const readInviteFromUrl = () => {
+  const params = new URLSearchParams(window.location.search);
+  const eventId = String(params.get("event") || "").trim();
+  const inviteId = String(params.get("invite") || "").trim();
+
+  if (!eventId || !inviteId) return null;
+  return { eventId, inviteId };
+};
+
+const savePendingInvite = (pendingInvite) => {
+  if (!pendingInvite?.eventId || !pendingInvite?.inviteId) return;
+
+  try {
+    sessionStorage.setItem(PENDING_INVITE_KEY, JSON.stringify(pendingInvite));
+  } catch {
+    // Ignore storage failures and keep app usable.
+  }
+};
+
+const getPendingInvite = () => {
+  try {
+    const raw = sessionStorage.getItem(PENDING_INVITE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.eventId !== "string" || typeof parsed?.inviteId !== "string") {
+      return null;
+    }
+
+    const eventId = parsed.eventId.trim();
+    const inviteId = parsed.inviteId.trim();
+    if (!eventId || !inviteId) return null;
+
+    return { eventId, inviteId };
+  } catch {
+    return null;
+  }
+};
+
+const clearPendingInvite = () => {
+  try {
+    sessionStorage.removeItem(PENDING_INVITE_KEY);
+  } catch {
+    // Ignore storage failures and keep app usable.
+  }
+};
+
+const clearInviteQueryParams = () => {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("event");
+    url.searchParams.delete("invite");
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState({}, "", nextUrl || "/");
+  } catch {
+    // Ignore URL rewrite failures.
+  }
+};
+
+const inviteFromUrl = readInviteFromUrl();
+if (inviteFromUrl) {
+  savePendingInvite(inviteFromUrl);
+}
+
+let isRestoringPendingInvite = false;
 
 function resolveInitialLocale() {
   const preferred = localStorage.getItem(LOCALE_STORAGE_KEY);
@@ -147,6 +214,26 @@ const localizeApiError = (errorPayload, fallbackKey) => {
   }
 
   return tr(fallbackKey);
+};
+
+const isUnauthorizedResponse = (response, errorPayload) => {
+  if (response?.status === 401) return true;
+  return errorPayload?.error === "Unauthorized";
+};
+
+const handleAuthFailure = (response, errorPayload) => {
+  if (!isUnauthorizedResponse(response, errorPayload)) {
+    return false;
+  }
+
+  clearUser();
+  clearPendingInvite();
+  render();
+
+  const message = localizeApiError(errorPayload, "ui.statusSessionExpired");
+  setStatus(message, "error");
+  setErrorSummary(message);
+  return true;
 };
 
 const loadUserState = () => {
@@ -391,6 +478,59 @@ const loadRsvps = async (eventId, { showLoading = true } = {}) => {
   } finally {
     rsvpState.loading = false;
     render();
+  }
+};
+
+const ensureInvitedEventVisible = async (eventId) => {
+  const exists = eventsState.items.some((item) => item.id === eventId);
+  if (exists) return true;
+
+  try {
+    const response = await fetch(`${API_BASE}/events/${eventId}`);
+    if (!response.ok) return false;
+
+    const eventItem = await response.json();
+    if (!eventItem || typeof eventItem !== "object") return false;
+
+    eventsState.items = [eventItem, ...eventsState.items];
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const restorePendingInviteContext = async () => {
+  if (isRestoringPendingInvite) return false;
+
+  const pendingInvite = getPendingInvite();
+  if (!pendingInvite) return false;
+  if (!getCurrentUserId()) return false;
+
+  isRestoringPendingInvite = true;
+
+  try {
+    await loadEvents({ showLoading: true });
+
+    const available = await ensureInvitedEventVisible(pendingInvite.eventId);
+    if (!available) {
+      setEventsStatus(tr("ui.inviteEventNotFound"), "error");
+      return false;
+    }
+
+    eventsState.expandedEventId = pendingInvite.eventId;
+    render();
+
+    await loadInvitations(pendingInvite.eventId, { showLoading: true });
+    await loadRsvps(pendingInvite.eventId, { showLoading: true });
+
+    setCollectionStatus("rsvps", pendingInvite.eventId, tr("ui.inviteContextRestored"), "success");
+    render();
+
+    clearPendingInvite();
+    clearInviteQueryParams();
+    return true;
+  } finally {
+    isRestoringPendingInvite = false;
   }
 };
 
@@ -757,6 +897,7 @@ const render = () => {
 
         const profile = await response.json();
         saveUserState(profile);
+        await restorePendingInviteContext();
         render();
         setStatus(tr("ui.statusLoggedIn"), "success");
       } catch {
@@ -827,6 +968,7 @@ const render = () => {
           createdAt: now,
         };
         saveUserState(newUser, now);
+        await restorePendingInviteContext();
         render();
         setStatus(tr("ui.statusCreated"), "success");
       } catch {
@@ -837,6 +979,10 @@ const render = () => {
         setControlLoading(submitButton, false, tr("ui.loadingCreateAccount"));
       }
     });
+
+    if (getPendingInvite()) {
+      setStatus(tr("ui.inviteSignInRequired"), "info");
+    }
   } else {
     const refreshButton = document.querySelector("[data-action='refresh']");
     const logoutButton = document.querySelector("[data-action='logout']");
@@ -934,6 +1080,10 @@ const render = () => {
       setControlLoading(refreshEventsButton, true, tr("ui.eventsLoading"));
 
       await loadEvents({ showLoading: true });
+      if (!getCurrentUserId()) {
+        setControlLoading(refreshEventsButton, false, tr("ui.eventsLoading"));
+        return;
+      }
       setEventsStatus(tr("ui.eventsRefreshed"), "success");
       setControlLoading(refreshEventsButton, false, tr("ui.eventsLoading"));
     });
@@ -1005,6 +1155,9 @@ const render = () => {
 
         if (!response.ok) {
           const error = await response.json().catch(() => ({}));
+          if (handleAuthFailure(response, error)) {
+            return;
+          }
           setEventsStatus(localizeApiError(error, "ui.eventsSaveFailed"), "error");
           return;
         }
@@ -1110,6 +1263,9 @@ const render = () => {
 
           if (!response.ok) {
             const error = await response.json().catch(() => ({}));
+            if (handleAuthFailure(response, error)) {
+              return;
+            }
             setCollectionStatus(
               "invitations",
               eventId,
@@ -1170,6 +1326,9 @@ const render = () => {
 
           if (!response.ok) {
             const error = await response.json().catch(() => ({}));
+            if (handleAuthFailure(response, error)) {
+              return;
+            }
             setCollectionStatus("rsvps", eventId, localizeApiError(error, "ui.rsvpSaveFailed"), "error");
             render();
             return;
@@ -1214,6 +1373,9 @@ const render = () => {
 
           if (!response.ok) {
             const error = await response.json().catch(() => ({}));
+            if (handleAuthFailure(response, error)) {
+              return;
+            }
             setEventsStatus(localizeApiError(error, "ui.eventsDeleteFailed"), "error");
             return;
           }
@@ -1233,7 +1395,11 @@ const render = () => {
     });
 
     if (!eventsState.loaded && !eventsState.loading) {
-      loadEvents({ showLoading: true });
+      if (getPendingInvite()) {
+        restorePendingInviteContext();
+      } else {
+        loadEvents({ showLoading: true });
+      }
     }
   }
 
