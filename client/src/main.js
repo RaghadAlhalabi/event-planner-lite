@@ -15,6 +15,7 @@ let eventsState = {
   error: "",
   editingId: null,
   expandedEventId: null,
+  guestOnlyEventIds: {},
   invitations: {},
   rsvps: {},
 };
@@ -291,10 +292,13 @@ const resetEventsState = () => {
     error: "",
     editingId: null,
     expandedEventId: null,
+    guestOnlyEventIds: {},
     invitations: {},
     rsvps: {},
   };
 };
+
+const isGuestOnlyEvent = (eventId) => Boolean(eventsState.guestOnlyEventIds[eventId]);
 
 const clearUser = () => {
   localStorage.removeItem(STORAGE_KEY);
@@ -483,19 +487,24 @@ const loadRsvps = async (eventId, { showLoading = true } = {}) => {
 
 const ensureInvitedEventVisible = async (eventId) => {
   const exists = eventsState.items.some((item) => item.id === eventId);
-  if (exists) return true;
+  if (exists) {
+    return { available: true, guestOnly: isGuestOnlyEvent(eventId) };
+  }
 
   try {
     const response = await fetch(`${API_BASE}/events/${eventId}`);
-    if (!response.ok) return false;
+    if (!response.ok) return { available: false, guestOnly: false };
 
     const eventItem = await response.json();
-    if (!eventItem || typeof eventItem !== "object") return false;
+    if (!eventItem || typeof eventItem !== "object") {
+      return { available: false, guestOnly: false };
+    }
 
+    eventsState.guestOnlyEventIds[eventId] = true;
     eventsState.items = [eventItem, ...eventsState.items];
-    return true;
+    return { available: true, guestOnly: true };
   } catch {
-    return false;
+    return { available: false, guestOnly: false };
   }
 };
 
@@ -511,8 +520,8 @@ const restorePendingInviteContext = async () => {
   try {
     await loadEvents({ showLoading: true });
 
-    const available = await ensureInvitedEventVisible(pendingInvite.eventId);
-    if (!available) {
+    const invitedContext = await ensureInvitedEventVisible(pendingInvite.eventId);
+    if (!invitedContext.available) {
       setEventsStatus(tr("ui.inviteEventNotFound"), "error");
       return false;
     }
@@ -520,7 +529,9 @@ const restorePendingInviteContext = async () => {
     eventsState.expandedEventId = pendingInvite.eventId;
     render();
 
-    await loadInvitations(pendingInvite.eventId, { showLoading: true });
+    if (!invitedContext.guestOnly) {
+      await loadInvitations(pendingInvite.eventId, { showLoading: true });
+    }
     await loadRsvps(pendingInvite.eventId, { showLoading: true });
 
     setCollectionStatus("rsvps", pendingInvite.eventId, tr("ui.inviteContextRestored"), "success");
@@ -585,6 +596,7 @@ const render = () => {
         ${eventsState.items
           .map((eventItem) => {
             const eventId = eventItem.id;
+            const isGuestView = isGuestOnlyEvent(eventId);
             const invitationState = ensureEventCollectionState("invitations", eventId);
             const rsvpState = ensureEventCollectionState("rsvps", eventId);
             const isExpanded = eventsState.expandedEventId === eventId;
@@ -628,10 +640,14 @@ const render = () => {
             </div>
             <div class="event-card-actions">
               <button type="button" data-action="toggle-event-collab" data-event-id="${escapeHtml(eventId)}">${
-                isExpanded ? tr("ui.eventsHideCollab") : tr("ui.eventsShowCollab")
+                isExpanded ? tr("ui.eventsHideCollab") : isGuestView ? tr("ui.rsvpsTitle") : tr("ui.eventsShowCollab")
               }</button>
-              <button type="button" class="secondary" data-action="edit-event" data-event-id="${escapeHtml(eventItem.id)}">${tr("ui.eventsEdit")}</button>
-              <button type="button" class="danger" data-action="delete-event" data-event-id="${escapeHtml(eventItem.id)}" data-requires-network>${tr("ui.eventsDelete")}</button>
+              ${
+                isGuestView
+                  ? ""
+                  : `<button type="button" class="secondary" data-action="edit-event" data-event-id="${escapeHtml(eventItem.id)}">${tr("ui.eventsEdit")}</button>
+              <button type="button" class="danger" data-action="delete-event" data-event-id="${escapeHtml(eventItem.id)}" data-requires-network>${tr("ui.eventsDelete")}</button>`
+              }
             </div>
 
             ${
@@ -639,7 +655,10 @@ const render = () => {
                 ? `
               <div class="event-collab">
                 <div class="event-collab-grid">
-                  <section>
+                  ${
+                    isGuestView
+                      ? ""
+                      : `<section>
                     <h4>${tr("ui.invitationsTitle")}</h4>
                     <p class="status" data-type="${escapeHtml(invitationState.statusType || "info")}">${escapeHtml(invitationState.status || "")}</p>
                     ${invitationState.error ? `<p class="status" data-type="error">${escapeHtml(invitationState.error)}</p>` : ""}
@@ -654,8 +673,8 @@ const render = () => {
                       </div>
                     </form>
                     ${invitationsBody}
-                  </section>
-
+                  </section>`
+                  }
                   <section>
                     <h4>${tr("ui.rsvpsTitle")}</h4>
                     <p class="status" data-type="${escapeHtml(rsvpState.statusType || "info")}">${escapeHtml(rsvpState.status || "")}</p>
@@ -1209,6 +1228,7 @@ const render = () => {
       button.addEventListener("click", async () => {
         const eventId = button.dataset.eventId;
         if (!eventId) return;
+        if (isGuestOnlyEvent(eventId)) return;
 
         setControlLoading(button, true, tr("ui.invitationsLoading"));
         await loadInvitations(eventId, { showLoading: true });
@@ -1234,6 +1254,7 @@ const render = () => {
         event.preventDefault();
         const eventId = form.dataset.eventId;
         if (!eventId) return;
+        if (isGuestOnlyEvent(eventId)) return;
 
         if (!isOnline()) {
           setCollectionStatus("invitations", eventId, tr("ui.statusRequiresOnline"), "error");
@@ -1349,6 +1370,7 @@ const render = () => {
       button.addEventListener("click", async () => {
         const eventId = button.dataset.eventId;
         if (!eventId) return;
+        if (isGuestOnlyEvent(eventId)) return;
 
         if (!isOnline()) {
           setEventsStatus(tr("ui.statusRequiresOnline"), "error");
