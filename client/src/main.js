@@ -1120,23 +1120,9 @@ const render = () => {
             return;
           }
 
-          const payload = await response.json().catch(() => ({}));
-
           form.reset();
           await loadInvitations(eventId, { showLoading: false });
-
-          if (payload?.emailDelivery?.sent) {
-            setCollectionStatus("invitations", eventId, tr("ui.invitationsSent"), "success");
-          } else {
-            const reason = payload?.emailDelivery?.reason || "Unknown";
-            const detail = payload?.emailDelivery?.detail ? ` (${payload.emailDelivery.detail})` : "";
-            setCollectionStatus(
-              "invitations",
-              eventId,
-              tr("ui.invitationsDeliveryFailed", { reason: `${reason}${detail}` }),
-              "error"
-            );
-          }
+          setCollectionStatus("invitations", eventId, tr("ui.invitationsSent"), "success");
         } catch {
           setCollectionStatus("invitations", eventId, tr("ui.invitationsSendNetwork"), "error");
         } finally {

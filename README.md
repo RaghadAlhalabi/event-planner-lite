@@ -41,28 +41,25 @@ Event Planner Lite is a full-stack web app for planning events, inviting attende
 	- cached-profile freshness message with last-updated timestamp.
 
 ## Invitation Email Delivery
-- Invitation records are stored in PostgreSQL and can also be delivered as real emails via SMTP when enabled.
-- Required server environment variables:
+- Email delivery was initially implemented with Gmail SMTP, but deployment-time failures and timeouts made it unreliable in production.
+- The production flow now uses Resend API as the primary provider for stable, cloud-ready delivery.
+- Domain `roodyme.com` (GoDaddy) is connected and verified for outbound delivery.
+- DNS setup is completed and verified (SPF, DKIM, MX).
+- End-to-end invitation flow now works in production:
+	- Invitations are sent successfully.
+	- Recipients receive the email.
+	- Invitation link opens the app for login/registration and continued flow.
+- Active provider configuration:
 	- `EMAIL_ENABLED=true`
-	- `EMAIL_PROVIDER` (`smtp` by default, or `resend`)
-	- `SMTP_HOST`
-	- `SMTP_PORT`
-	- `SMTP_SECURE` (`true` for SSL, often `false` for STARTTLS on port 587)
-	- `SMTP_USER`
-	- `SMTP_PASS`
-	- `SMTP_FROM`
-	- `APP_BASE_URL` (used for invitation links in email body)
-- Optional (recommended fallback if Gmail SMTP fails):
 	- `EMAIL_PROVIDER=resend`
 	- `RESEND_API_KEY`
-	- `RESEND_FROM`
-- If SMTP is not configured or disabled, invitations are created with `pending` status but no email is sent.
-- Invitation create response includes `emailDelivery.provider` and `emailDelivery.detail` for troubleshooting delivery errors.
-- SMTP test endpoint (protected):
+	- `RESEND_FROM` (sender using verified domain)
+	- `APP_BASE_URL` (invitation deep-link base)
+	- `EMAIL_TEST_TOKEN` (protected test endpoint token)
+- Debug/test endpoint:
 	- `POST /api/health/email-test`
 	- Header: `x-email-test-token: <EMAIL_TEST_TOKEN>`
 	- Body: `{ "to": "your-email@example.com" }`
-	- Returns `status: ok` when SMTP send succeeds.
 
 ## Service Worker Update UX
 - App detects waiting service worker and prompts user to refresh.
