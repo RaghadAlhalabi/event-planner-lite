@@ -284,6 +284,36 @@ const buildUserHeaders = (headers = {}) => {
   return userId ? { ...headers, "x-user-id": userId } : headers;
 };
 
+const getRsvpEndpoints = (eventId) => {
+  const encodedEventId = encodeURIComponent(String(eventId || "").trim());
+  return [
+    `${API_BASE}/events/${encodedEventId}/rsvps`,
+    `${API_BASE}/rsvps/${encodedEventId}`,
+  ];
+};
+
+const isRoute404Html = (response) => {
+  if (!response || response.status !== 404) return false;
+  const contentType = response.headers.get("content-type") || "";
+  return contentType.includes("text/html");
+};
+
+const fetchRsvpsWithFallback = async (eventId, options = {}) => {
+  const endpoints = getRsvpEndpoints(eventId);
+  let lastResponse = null;
+
+  for (const endpoint of endpoints) {
+    const response = await fetch(endpoint, options);
+    lastResponse = response;
+
+    if (!isRoute404Html(response)) {
+      return response;
+    }
+  }
+
+  return lastResponse;
+};
+
 const resetEventsState = () => {
   eventsState = {
     items: [],
@@ -461,7 +491,7 @@ const loadRsvps = async (eventId, { showLoading = true } = {}) => {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/events/${eventId}/rsvps`, {
+    const response = await fetchRsvpsWithFallback(eventId, {
       headers: buildUserHeaders(),
     });
 
@@ -1334,7 +1364,7 @@ const render = () => {
         setControlLoading(submitButton, true, tr("ui.rsvpSaving"));
 
         try {
-          const response = await fetch(`${API_BASE}/events/${eventId}/rsvps`, {
+          const response = await fetchRsvpsWithFallback(eventId, {
             method: "POST",
             headers: buildUserHeaders({
               "Content-Type": "application/json",
