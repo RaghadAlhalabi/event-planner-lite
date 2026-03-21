@@ -22,8 +22,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/events", eventsRouter);
 app.use("/api/events/:eventId/invitations", invitationsRouter);
-app.use("/api/events/:eventId/rsvps", rsvpsRouter);
-app.use("/api/rsvps/:eventId", rsvpsRouter);
+app.use("/api", rsvpsRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/health", healthRouter);
 
