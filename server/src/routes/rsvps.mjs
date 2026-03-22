@@ -45,7 +45,9 @@ const ensureTables = async () => {
           ADD COLUMN IF NOT EXISTS ends_at TIMESTAMPTZ,
           ADD COLUMN IF NOT EXISTS location VARCHAR(255),
           ADD COLUMN IF NOT EXISTS notes TEXT,
-          ADD COLUMN IF NOT EXISTS external_id VARCHAR(64) UNIQUE
+          ADD COLUMN IF NOT EXISTS external_id VARCHAR(64) UNIQUE,
+          ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ,
+          ADD COLUMN IF NOT EXISTS archived_reason VARCHAR(64)
       `);
 
       await pool.query(`
@@ -77,7 +79,8 @@ const findEventByParamId = async (eventId) => {
     `
       SELECT id
       FROM events
-      WHERE external_id = $1 OR id::text = $1
+      WHERE (external_id = $1 OR id::text = $1)
+        AND archived_at IS NULL
       LIMIT 1
     `,
     [eventId]
@@ -92,6 +95,59 @@ const toApiRsvp = (row) => ({
   status: row.status,
   note: row.note || null,
 });
+
+const getRequestUserId = (req) => {
+  const value = req.get("x-user-id");
+  return typeof value === "string" ? value.trim() : "";
+};
+
+const requireRequestUserId = (req, res) => {
+  const userId = getRequestUserId(req);
+  if (!userId) {
+    res.status(401).json({
+      error: "Unauthorized",
+      message: req.t("errors.Unauthorized"),
+    });
+    return null;
+  }
+
+  return userId;
+};
+
+const saveRsvpForUserId = async (req, res, userId) => {
+  const event = await findEventByParamId(req.params.eventId);
+  if (!event) {
+    return res.status(404).json({
+      error: "NotFound",
+      message: req.t("errors.NotFound"),
+    });
+  }
+
+  const result = await pool.query(
+    `
+      INSERT INTO rsvps (external_id, event_id, user_id, status, note)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (event_id, user_id)
+      DO UPDATE SET
+        status = EXCLUDED.status,
+        note = EXCLUDED.note,
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING id, external_id
+    `,
+    [
+      `rsvp_${randomUUID()}`,
+      event.id,
+      userId,
+      req.body.status,
+      req.body.note ?? null,
+    ]
+  );
+
+  return res.json({
+    status: "saved",
+    id: result.rows[0].external_id || `rsvp_${result.rows[0].id}`,
+  });
+};
 
 router.get("/", validateRequest({ params: validateEventParams }), async (req, res) => {
   if (!ensureDatabase(req, res)) {
@@ -129,6 +185,41 @@ router.get("/", validateRequest({ params: validateEventParams }), async (req, re
 });
 
 router.post(
+  "/",
+  validateRequest({
+    params: validateEventParams,
+    body: validateRsvpBody,
+  }),
+  async (req, res) => {
+    if (!ensureDatabase(req, res)) {
+      return;
+    }
+
+    const requestUserId = requireRequestUserId(req, res);
+    if (!requestUserId) {
+      return;
+    }
+
+    try {
+      await ensureTables();
+      return await saveRsvpForUserId(req, res, requestUserId);
+    } catch (error) {
+      if (error?.code === "23503") {
+        return res.status(404).json({
+          error: "NotFound",
+          message: req.t("errors.NotFound"),
+        });
+      }
+
+      res.status(500).json({
+        error: "DatabaseError",
+        message: req.t("errors.DatabaseError"),
+      });
+    }
+  }
+);
+
+router.post(
   "/:userId",
   validateRequest({
     params: validateEventUserParams,
@@ -139,38 +230,21 @@ router.post(
       return;
     }
 
+    const requestUserId = requireRequestUserId(req, res);
+    if (!requestUserId) {
+      return;
+    }
+
+    if (requestUserId !== req.params.userId) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: req.t("errors.Forbidden"),
+      });
+    }
+
     try {
       await ensureTables();
-
-      const event = await findEventByParamId(req.params.eventId);
-      if (!event) {
-        return res.status(404).json({
-          error: "NotFound",
-          message: req.t("errors.NotFound"),
-        });
-      }
-
-      const result = await pool.query(
-        `
-          INSERT INTO rsvps (external_id, event_id, user_id, status, note)
-          VALUES ($1, $2, $3, $4, $5)
-          ON CONFLICT (event_id, user_id)
-          DO UPDATE SET
-            status = EXCLUDED.status,
-            note = EXCLUDED.note,
-            updated_at = CURRENT_TIMESTAMP
-          RETURNING id, external_id
-        `,
-        [
-          `rsvp_${randomUUID()}`,
-          event.id,
-          req.params.userId,
-          req.body.status,
-          req.body.note ?? null,
-        ]
-      );
-
-      res.json({ status: "saved", id: result.rows[0].external_id || `rsvp_${result.rows[0].id}` });
+      return await saveRsvpForUserId(req, res, requestUserId);
     } catch (error) {
       if (error?.code === "23503") {
         return res.status(404).json({
