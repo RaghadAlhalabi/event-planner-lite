@@ -13,6 +13,8 @@ Event Planner Lite is a full-stack web app for planning events, inviting attende
 - Server: Node.js + Express.
 - Database: PostgreSQL.
 
+👉 [User Guide](./docs/user_guide.md)
+
 **Live services**
 - Frontend (Render Static Site): https://event-planner-lite-1.onrender.com
 - Backend API (Render Web Service): https://event-planner-lite.onrender.com
@@ -118,8 +120,6 @@ Kanban board view: https://github.com/users/RaghadAlhalabi/projects/1/views/1
 - `/docs` – Supporting documentation
 Note: In this repo, the backend is the `/server` directory (Node.js/Express API) and the frontend is the `/client` directory (Vite-based PWA client).
 
+## 📘 Documentation
 
-
-
-
-
+For detailed instructions on how to use the application, please refer to the User Guide:
