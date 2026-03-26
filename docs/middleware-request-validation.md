@@ -7,20 +7,20 @@ This middleware solves that by validating the request *before* the handler runs.
 
 Goals:
 - Same error response format every time
-- No duplicated “is this missing / wrong type?” checks inside controllers
-- Routes stay clean (business logic only)
+- No repeated "is this missing / wrong type?" checks inside route handlers
+- Routes stay focused on business logic
 
 ## What it does (in this repo)
 This repo includes a small middleware factory:
 
 `validateRequest({ body, query, params })`
 
-It uses custom validator functions to validate:
+It uses custom validator functions to check:
 - `req.body`
 - `req.query`
 - `req.params`
 
-If everything is valid, it replaces `req.body`/`req.query`/`req.params` with the validated values and calls `next()`.
+If everything is valid, it replaces `req.body`/`req.query`/`req.params` with validated values and calls `next()`.
 
 If validation fails, it returns `400` with a consistent JSON shape.
 

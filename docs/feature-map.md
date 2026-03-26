@@ -2,7 +2,7 @@
 
 ## Core Platform (High Priority)
 - **User Accounts**
-  - Sign up, log in, log out with JWT
+  - Sign up, log in, and log out
   - Profile basics (name, optional avatar placeholder)
 - **Event Workspace**
   - Dashboard with owned and shared events

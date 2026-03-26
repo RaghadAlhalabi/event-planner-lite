@@ -1,6 +1,6 @@
 # API Design (Event Planner Lite)
 
-Goal: scaffold a REST-ish API specific to Event Planner Lite (no user/auth endpoints). This document defines the planned endpoints, request shapes, and response shapes so the server can be scaffolded and tested.
+Goal: scaffold a REST-ish API for Event Planner Lite. This document defines planned endpoints, request shapes, and response shapes so the server can be scaffolded and tested.
 
 Base URL: `/api`
 

@@ -19,15 +19,9 @@ Event Planner Lite is a full-stack web app for planning events, inviting attende
 
 ## Localization (i18n/l10n)
 - Supported locales: `en` (English), `nb` (Norwegian Bokmal).
-- Server locale detection: `Accept-Language` with fallback to `en`.
-- Client locale behavior:
-	- default from browser language.
-	- manual language override from UI selector.
-	- selected locale persisted in local storage.
-- Localized content includes:
-	- UI labels and status messages.
-	- API error messages returned from server.
-	- formatted date/time and relative time using `Intl`.
+- Locale is detected from `Accept-Language` with fallback to `en`.
+- Users can switch language in the UI, and the choice is saved in local storage.
+- Localized content includes UI labels, status messages, API errors, and date/time formatting.
 
 ## PWA and Offline Behavior
 - Manifest includes id, scope, start URL, standalone display, and icons (192/512).
@@ -41,25 +35,10 @@ Event Planner Lite is a full-stack web app for planning events, inviting attende
 	- cached-profile freshness message with last-updated timestamp.
 
 ## Invitation Email Delivery
-- Email delivery was initially implemented with Gmail SMTP, but deployment-time failures and timeouts made it unreliable in production.
-- The production flow now uses Resend API as the primary provider for stable, cloud-ready delivery.
-- Domain `roodyme.com` (GoDaddy) is connected and verified for outbound delivery.
-- DNS setup is completed and verified (SPF, DKIM, MX).
-- End-to-end invitation flow now works in production:
-	- Invitations are sent successfully.
-	- Recipients receive the email.
-	- Invitation link opens the app for login/registration and continued flow.
-- Active provider configuration:
-	- `EMAIL_ENABLED=true`
-	- `EMAIL_PROVIDER=resend`
-	- `RESEND_API_KEY`
-	- `RESEND_FROM` (sender using verified domain)
-	- `APP_BASE_URL` (invitation deep-link base)
-	- `EMAIL_TEST_TOKEN` (protected test endpoint token)
-- Debug/test endpoint:
-	- `POST /api/health/email-test`
-	- Header: `x-email-test-token: <EMAIL_TEST_TOKEN>`
-	- Body: `{ "to": "your-email@example.com" }`
+- Email delivery first used Gmail SMTP, but deployment-time failures and timeouts made it unreliable.
+- The project now uses Resend with a verified sender domain for stable production delivery.
+- Invitation delivery and deep-link flow are working in production.
+- Test endpoint: `POST /api/health/email-test` with header `x-email-test-token`.
 
 ## Service Worker Update UX
 - App detects waiting service worker and prompts user to refresh.
@@ -74,19 +53,8 @@ Event Planner Lite is a full-stack web app for planning events, inviting attende
 - Lighthouse accessibility score captured in project reports.
 
 ## Lighthouse Evidence
-- Latest consolidated report file: `client/lighthouse-full.json`.
-- Current categories in that report:
-	- Performance: 100
-	- Accessibility: 100
-	- Best Practices: 100
-	- SEO: 100
+- Latest consolidated report: `client/lighthouse-full.json` (Performance/Accessibility/Best Practices/SEO: 100).
 
-## Bonus and Advanced Notes
-- Advanced features that can be added next:
-	- queued offline writes with replay on reconnect.
-	- background sync (when supported).
-	- push notifications for invitations/RSVP reminders.
-	- richer service worker debugging guide and release workflow.
 
 **Run locally**
 - Client: `cd client` then `npm run dev`
@@ -122,8 +90,8 @@ Event Planner Lite is a full-stack web app for planning events, inviting attende
 - Matching backend endpoints are implemented for `/users`, `/events`, `/events/:eventId/invitations`, and `/events/:eventId/rsvps`.
 
 ## Requirements Coverage
-- Client, Server, User accounts, PostgreSQL, REST-ish API, PWA, Offline functionality.
-- Tooling: local repo linked to GitHub, documented plan, working scaffold.
+- Client + server implementation with user accounts, PostgreSQL, REST-ish API, and PWA/offline support.
+- Tooling includes GitHub repo, documentation, and project planning board.
 
 ## Feature Map
 
@@ -131,7 +99,6 @@ Full feature breakdown: [docs/feature-map.md](docs/feature-map.md)
 
 ## Middleware (assignment)
 - Request validation need + design: [docs/middleware-request-validation.md](docs/middleware-request-validation.md)
-- Git + project workflow steps: [docs/git-workflow-middleware.md](docs/git-workflow-middleware.md)
 
 ## API (assignment)
 - API design doc: [docs/api-design.md](docs/api-design.md)
@@ -142,22 +109,14 @@ Full feature breakdown: [docs/feature-map.md](docs/feature-map.md)
 - Priority field: High / Medium / Low
 - Milestones: Core Platform, Collaboration Features, Launch & QA
 - High-level tasks span backend foundation, event features, PWA shell, offline sync, and release polish
-Live board: https://github.com/users/RaghadAlhalabi/projects/1
+
+Kanban board view: https://github.com/users/RaghadAlhalabi/projects/1/views/1
 
 ## Repository Structure
 - `/client` – Frontend PWA scaffold
 - `/server` – Node.js API (ESM via `.mjs`)
 - `/docs` – Supporting documentation
 Note: In this repo, the backend is the `/server` directory (Node.js/Express API) and the frontend is the `/client` directory (Vite-based PWA client).
-
-## Docs
-- API design: [docs/api-design.md](docs/api-design.md)
-- Feature map: [docs/feature-map.md](docs/feature-map.md)
-- Middleware design: [docs/middleware-request-validation.md](docs/middleware-request-validation.md)
-- Middleware tasks: [docs/middleware-request-validation-tasks.md](docs/middleware-request-validation-tasks.md)
-- Git workflow: [docs/git-workflow-middleware.md](docs/git-workflow-middleware.md)
-- Privacy policy: [docs/privacy-policy.md](docs/privacy-policy.md)
-- Terms of service: [docs/terms-of-service.md](docs/terms-of-service.md)
 
 
 
